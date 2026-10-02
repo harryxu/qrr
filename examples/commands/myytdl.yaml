@@ -1,0 +1,42 @@
+version: 1
+name: myytdl
+description: Download a YouTube video with available subtitles
+type: command
+params:
+  - name: url
+    type: input
+    prompt: Video URL
+    required: true
+  - name: resolution
+    type: select
+    prompt: Maximum resolution
+    default: "1440"
+    options:
+      - {label: "4K / 2160p", value: "2160"}
+      - {label: "1440p", value: "1440"}
+      - {label: "1080p", value: "1080"}
+      - {label: "720p", value: "720"}
+  - name: subtitles
+    type: multiselect
+    prompt: Subtitle languages
+    default: [zh-Hans, ja, en]
+    options:
+      - {label: Simplified Chinese, value: zh-Hans}
+      - {label: Traditional Chinese, value: zh-Hant}
+      - {label: Japanese, value: ja}
+      - {label: English, value: en}
+command:
+  - yt-dlp
+  - -f
+  - 'bestvideo[height<={{ .resolution }}]+bestaudio/best[height<={{ .resolution }}]'
+optional_args:
+  - when: subtitles
+    args:
+      - --write-subs
+      - --write-auto-subs
+      - --sub-langs
+      - '{{ join .subtitles "," }}'
+      - --embed-subs
+args_tail:
+  - --
+  - '{{ .url }}'

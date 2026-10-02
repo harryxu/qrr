@@ -1,0 +1,12 @@
+version: 1
+name: hello
+description: Print a greeting
+type: command
+params:
+  - name: name
+    type: input
+    prompt: Your name
+    default: World
+command:
+  - echo
+  - 'Hello, {{ .name }}!'
