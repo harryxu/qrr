@@ -10,7 +10,7 @@
   execution.
 - Support Linux and macOS. External programs invoked by recipes are separate
   dependencies.
-- Read `README.md` and `docs/schema.md` before changing behavior. The
+- Read `README.md`, `docs/usage.md`, and `docs/schema.md` before changing behavior. The
   implementation plan records design context; some proposed features remain
   unimplemented.
 
@@ -40,6 +40,8 @@
 - `internal/runner`: subprocess execution and exit-code handling.
 - `examples/commands`: shareable recipe examples.
 - `docs/schema.md`: the implemented configuration contract.
+- `docs/usage.md`: installation, commands, and execution behavior.
+- `docs/dependencies.md`: dependency roles and version maintenance reference.
 - Keep the entry point small and implementation packages under `internal`.
   Do not add a public `pkg` directory without a concrete public API requirement.
 
@@ -105,5 +107,5 @@ For recipe changes, validate examples and inspect the resulting argv:
   schema errors, argv boundaries, completion, empty filter results, cancellation,
   and exit codes.
 - For prompt changes, also verify keyboard interaction in a real terminal.
-- Keep README and schema documentation consistent with implemented behavior.
+- Keep README, usage, and schema documentation consistent with implemented behavior.
 - Build artifacts belong in `bin` or `dist` and must remain ignored by Git.
