@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 
 	"qrr/internal/cli"
 	"qrr/internal/runner"
@@ -15,9 +14,9 @@ import (
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := runner.InterruptContext(context.Background())
 	err := cli.Execute(ctx, os.Args[1:], os.Stdout, os.Stderr)
-	cancelled := ctx.Err() != nil || errors.Is(err, huh.ErrUserAborted)
+	cancelled := ctx.Err() != nil || errors.Is(err, huh.ErrUserAborted) || runner.ExitCode(err) == 130
 	stop()
 	code := runner.ExitCode(err)
 	if cancelled {

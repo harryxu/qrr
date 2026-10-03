@@ -4,6 +4,7 @@ package runner
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"os/exec"
 	"syscall"
@@ -11,14 +12,38 @@ import (
 )
 
 func Run(ctx context.Context, args []string) error {
-	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Cancel = func() error { return cmd.Process.Signal(os.Interrupt) }
-	cmd.WaitDelay = 3 * time.Second
-	return cmd.Run()
+	return run(ctx, args, os.Stdin, os.Stdout, os.Stderr)
 }
+
+func run(ctx context.Context, args []string, in io.Reader, out, stderr io.Writer) error {
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd.Stdin = in
+	cmd.Stdout = out
+	relay, finish, err := relayStderr(ctx, stderr)
+	if err != nil {
+		return err
+	}
+	cmd.Stderr = relay
+	cmd.Cancel = func() error {
+		if userInterrupted(ctx) && sharesForegroundTerminal(in) {
+			// Ctrl+C was delivered to the whole foreground group. Sending it
+			// again can interrupt Python finalizers and produce a traceback.
+			return nil
+		}
+		return cmd.Process.Signal(os.Interrupt)
+	}
+	cmd.WaitDelay = 3 * time.Second
+	runErr := cmd.Run()
+	stderrErr := finish()
+	if userInterrupted(ctx) {
+		return context.Canceled
+	}
+	if runErr != nil {
+		return runErr
+	}
+	return stderrErr
+}
+
 func ExitCode(err error) int {
 	if err == nil {
 		return 0

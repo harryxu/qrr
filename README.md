@@ -135,8 +135,15 @@ separated values, with `--subtitles=` representing an explicit empty selection.
 
 `--dry-run` renders argv without executing; `--dry-run --json` emits a JSON array.
 Shell-quoted output is for inspection only. Execution passes argv directly to the
-program, with inherited stdin/stdout/stderr and its exit code. Recipe and CLI
-errors return 1; cancellation returns 130. No shell expansion is performed.
+program, with inherited stdin/stdout/stderr and its exit code. Before starting a
+recipe, qrr prints the complete rendered command to stderr with a `Running:`
+prefix, including all selected parameter values. Recipe and CLI
+errors return 1; cancellation returns 130. Ctrl+C is treated as user cancellation:
+qrr avoids sending a duplicate interrupt to a child already in the terminal's
+foreground group and suppresses subsequent stderr cleanup diagnostics. Normal
+stderr output and genuine failures remain visible; stdout stays unchanged.
+Terminal stderr is relayed through a pseudo-terminal to retain terminal-aware
+progress output and resizing. No shell expansion is performed.
 
 See [docs/schema.md](docs/schema.md) and [examples/commands](examples/commands).
 Handlers, workflows, shell pipelines, usage-frequency ranking, and favorites are

@@ -108,6 +108,9 @@ func New(args []string) (*cobra.Command, error) {
 		if jsonOutput {
 			return fmt.Errorf("--json requires --dry-run")
 		}
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "Running:", commandText(argv)); err != nil {
+			return err
+		}
 		return runner.Run(cmd.Context(), argv)
 	}
 	root.RunE = func(cmd *cobra.Command, args []string) error {
