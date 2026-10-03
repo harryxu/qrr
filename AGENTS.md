@@ -23,6 +23,12 @@
   `nvm use` from the project root. The current project does not require Node.
 - Keep dependencies pinned in `go.mod` and `go.sum`. Run `go mod tidy` when
   imports or dependencies change.
+- Upgrade to the latest stable release in the maintained release line. Do not
+  adopt alpha, beta, or RC versions. Check upstream release history when changing
+  major module paths; `go list -m -u all` does not discover new major versions.
+- Keep PTY on v1.1.24 and YAML on v3.0.5 until a newer stable maintained release
+  is available. For modules without tagged releases, preserve pinned
+  pseudo-versions and report that no stable release exists.
 - Format modified Go files with `gofmt`.
 
 ## Project structure
