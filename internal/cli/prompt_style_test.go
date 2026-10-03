@@ -2,22 +2,16 @@ package cli
 
 import (
 	"bytes"
-	"io"
 	"strings"
 	"testing"
-
-	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
 )
 
 func TestEntryPromptTerminalStyleKeepsOneLogicalLine(t *testing.T) {
-	renderer := lipgloss.NewRenderer(io.Discard)
-	renderer.SetColorProfile(termenv.TrueColor)
 	for _, text := range []string{
 		"Run qrr prompt -v 'flutter upgrade' and follow its instructions to add a qrr YAML recipe.",
 		"Run qrr prompt -v 'echo " + strings.Repeat("long-command-argument", 20) + "' and follow its instructions to add a qrr YAML recipe.",
 	} {
-		rendered := renderEntryPrompt(renderer, text+"\n")
+		rendered := renderEntryPrompt(text + "\n")
 		if !strings.Contains(rendered, "\x1b[") {
 			t.Fatal("missing terminal colors")
 		}

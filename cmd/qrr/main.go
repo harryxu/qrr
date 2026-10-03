@@ -10,7 +10,7 @@ import (
 	"qrr/internal/cli"
 	"qrr/internal/runner"
 
-	"github.com/charmbracelet/huh"
+	"charm.land/huh/v2"
 )
 
 func main() {

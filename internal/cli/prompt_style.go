@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 	"golang.org/x/term"
 )
 
@@ -14,7 +14,7 @@ import (
 func writeEntryPrompt(out, stderr io.Writer, text string) error {
 	reminder := "Copy the following prompt and send it to your AI agent:"
 	if _, ok := styledTerminal(out); ok {
-		text = renderEntryPrompt(lipgloss.NewRenderer(out), text)
+		text = renderEntryPrompt(text)
 	}
 	if _, err := fmt.Fprint(stderr, reminder+"\n\n"); err != nil {
 		return err
@@ -32,9 +32,9 @@ func styledTerminal(w io.Writer) (int, bool) {
 	return fd, term.IsTerminal(fd)
 }
 
-func renderEntryPrompt(renderer *lipgloss.Renderer, text string) string {
+func renderEntryPrompt(text string) string {
 	// Leave wrapping to the terminal so copied prompts retain one logical line.
-	return renderer.NewStyle().
-		Foreground(lipgloss.AdaptiveColor{Light: "#0369A1", Dark: "#67E8F9"}).
+	return lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#38BDF8")).
 		Render(strings.TrimSuffix(text, "\n"))
 }

@@ -8,7 +8,7 @@ import (
 
 	"qrr/internal/recipe"
 
-	"github.com/charmbracelet/huh"
+	"charm.land/huh/v2"
 	"golang.org/x/term"
 )
 
@@ -24,8 +24,8 @@ func Choose(ctx context.Context, recipes []*recipe.Recipe) (*recipe.Recipe, erro
 	for _, r := range recipes {
 		options = append(options, huh.NewOption(r.Name+"  "+r.Description, r.Name))
 	}
-	field := huh.NewSelect[string]().Title("Select a command").Description("Type to filter. Use up/down to navigate. Ctrl+C to cancel.").Options(options...).Filtering(true).Height(10).Value(&name)
-	if err := huh.NewForm(huh.NewGroup(&commandSelector{field})).WithAccessible(false).RunWithContext(ctx); err != nil {
+	field := newCommandSelector(options, &name)
+	if err := huh.NewForm(huh.NewGroup(field)).WithAccessible(false).RunWithContext(ctx); err != nil {
 		return nil, err
 	}
 	for _, r := range recipes {

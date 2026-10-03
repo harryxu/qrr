@@ -3,18 +3,30 @@ package prompt
 import (
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
 )
 
-// commandSelector keeps Huh's keyboard handling and displays an empty-state message.
-type commandSelector struct{ *huh.Select[string] }
+const selectorDescription = "Type to filter. Use up/down to navigate. Ctrl+C to cancel."
 
-func (s *commandSelector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if key, ok := msg.(tea.KeyMsg); ok {
+// commandSelector keeps search active and prevents submission of empty results.
+// Huh owns navigation, rendering, and viewport scrolling.
+type commandSelector struct {
+	*huh.Select[string]
+}
+
+func newCommandSelector(options []huh.Option[string], value *string) *commandSelector {
+	return &commandSelector{
+		Select: huh.NewSelect[string]().Options(options...).Filtering(true).Title("Commands").
+			Description(selectorDescription).Height(10).Value(value),
+	}
+}
+
+func (s *commandSelector) Update(msg tea.Msg) (huh.Model, tea.Cmd) {
+	if key, ok := msg.(tea.KeyPressMsg); ok {
 		if _, found := s.Hovered(); !found {
-			switch key.Type {
-			case tea.KeyEnter, tea.KeyUp, tea.KeyDown, tea.KeyTab, tea.KeyShiftTab:
+			switch key.String() {
+			case "up", "down", "left", "right", "ctrl+p", "ctrl+n", "ctrl+k", "ctrl+j", "enter", "tab", "shift+tab":
 				return s, nil
 			}
 		}
@@ -22,6 +34,7 @@ func (s *commandSelector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	_, cmd := s.Select.Update(msg)
 	return s, cmd
 }
+
 func (s *commandSelector) View() string {
 	view := s.Select.View()
 	if _, ok := s.Hovered(); !ok {
@@ -31,12 +44,11 @@ func (s *commandSelector) View() string {
 		} else {
 			lines = append(lines, "  No matching commands")
 		}
-		view = strings.Join(lines, "\n")
+		return strings.Join(lines, "\n")
 	}
 	return view
 }
 
-// Keep search active while navigating and reserve Enter for selection.
 func (s *commandSelector) WithKeyMap(k *huh.KeyMap) huh.Field {
 	k.Select.Next.SetEnabled(false)
 	k.Select.Prev.SetEnabled(false)

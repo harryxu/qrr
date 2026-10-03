@@ -25,7 +25,9 @@ Add your Go binary directory to `PATH` when using `go install`.
 
 With no command, qrr opens a searchable recipe list in an interactive terminal.
 Type keywords to filter names and descriptions, use the arrow keys to navigate,
-and select a recipe to proceed to its parameter prompts. Ctrl+C cancels. After
+and select a recipe to proceed to its parameter prompts. Arrow keys move the
+highlight within a stable list; the list scrolls only when the selected item moves
+outside the visible rows. Long descriptions wrap to fit the terminal width. Ctrl+C cancels. After
 execution, qrr returns to the shell. Press Enter once to submit the current selection.
 With no terminal or with `--non-interactive`, a command name is required.
 
@@ -150,3 +152,16 @@ Handlers, workflows, shell pipelines, usage-frequency ranking, and favorites are
 not implemented. The yt-dlp example is declarative: subtitle network failures
 follow yt-dlp's exit behavior. A workflow that preserves successful video downloads
 when subtitle downloads fail is not implemented or verified against live YouTube.
+
+## Dependencies
+
+The interactive CLI uses [Huh v2](https://github.com/charmbracelet/huh),
+[Bubble Tea v2](https://github.com/charmbracelet/bubbletea),
+[Bubbles v2](https://github.com/charmbracelet/bubbles), and
+[Lip Gloss v2](https://github.com/charmbracelet/lipgloss). Huh manages selection
+and scrolls only enough to keep the active option visible. qrr adds a small
+adapter for immediate keyword filtering and empty-result protection.
+Dependency versions are pinned in `go.mod` and `go.sum`. The indirect pins also
+cover upstream test and tool modules so `go list -m -u all` reports no available
+updates. `go mod tidy` can prune unused graph pins; recheck the complete module
+graph after changing dependencies.
