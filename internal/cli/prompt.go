@@ -49,9 +49,7 @@ func newPromptCommand(dir string) *cobra.Command {
 				text = fmt.Sprintf("Analyze this command and add a reusable qrr YAML recipe with suitable interactive parameters:\n\n%s\n\nFirst run qrr --help, %s schema, and qrr add --help to learn the format and authoring workflow. Choose a unique name, preserve the command's behavior, and create the recipe using the configuration path shown by schema. Validate it with %s validate <name>, then inspect its argv with %s <name> --non-interactive --dry-run --json, supplying required parameter values.\n", command, prefix, prefix, prefix)
 			} else {
 				text = fmt.Sprintf("Run qrr prompt -v %s and follow its instructions to add a qrr YAML recipe.\n", Display([]string{command}))
-				if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "Copy the following prompt and send it to your AI agent:"); err != nil {
-					return err
-				}
+				return writeEntryPrompt(cmd.OutOrStdout(), cmd.ErrOrStderr(), text)
 			}
 			_, err := fmt.Fprint(cmd.OutOrStdout(), text)
 			return err

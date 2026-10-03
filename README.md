@@ -96,8 +96,12 @@ qrr --config-dir ./recipes prompt -v "flutter upgrade"
 ```
 
 Both modes generate text only; neither executes the target command nor creates a
-recipe. Prompts go to stdout. Only the default mode prints a copy reminder to
-stderr. `qrr schema` prints the configuration path, embedded YAML schema, and
+recipe. Prompts go to stdout. In a color-capable terminal, the default entry
+uses highlighted text with no background, border, padding, or inserted line
+breaks. The terminal handles visual wrapping, keeping the prompt on one logical
+line for copying. The copy reminder uses the terminal's default text color.
+Redirected output stays plain text; `NO_COLOR` disables styling. Only the default
+mode prints a copy reminder to stderr. `qrr schema` prints the configuration path, embedded YAML schema, and
 adding steps, so agents can learn the format when only the binary is installed.
 `prompt` and `schema` are reserved command names.
 
