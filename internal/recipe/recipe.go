@@ -44,7 +44,7 @@ type Recipe struct {
 }
 
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
-var reserved = map[string]bool{"run": true, "list": true, "show": true, "add": true, "edit": true, "remove": true, "validate": true, "completion": true, "help": true}
+var reserved = map[string]bool{"run": true, "list": true, "show": true, "add": true, "edit": true, "remove": true, "validate": true, "completion": true, "help": true, "prompt": true, "schema": true}
 var reservedFlags = map[string]bool{"help": true, "config-dir": true, "non-interactive": true, "dry-run": true, "json": true}
 
 func ValidName(name string) bool { return namePattern.MatchString(name) && !reserved[name] }

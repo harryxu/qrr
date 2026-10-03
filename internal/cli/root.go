@@ -21,7 +21,11 @@ func ConfigDir(args []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	promptIndex := promptCommandIndex(args)
 	for i := 0; i < len(args); i++ {
+		if i == promptIndex {
+			break
+		}
 		if args[i] == "--" {
 			break
 		}
@@ -44,13 +48,13 @@ func New(args []string) (*cobra.Command, error) {
 	}
 	recipes, problems := recipe.Load(dir)
 	var nonInteractive, dryRun, jsonOutput bool
-	root := &cobra.Command{Use: "qrr", Short: "Run your command recipes", SilenceUsage: true, SilenceErrors: true, Args: cobra.NoArgs}
+	root := &cobra.Command{Use: "qrr", Short: "Run your command recipes", SilenceUsage: true, SilenceErrors: true, TraverseChildren: true, Args: cobra.NoArgs}
 	root.PersistentFlags().StringVar(&dir, "config-dir", dir, "Configuration directory")
 	root.PersistentFlags().BoolVar(&nonInteractive, "non-interactive", false, "Use defaults without prompting")
 	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Render argv without executing")
 	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Print dry-run argv as JSON")
 	root.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if cmd.Name() == "__complete" || cmd.Name() == "__completeNoDesc" || cmd.Name() == "validate" {
+		if cmd.Name() == "__complete" || cmd.Name() == "__completeNoDesc" || cmd.Name() == "validate" || cmd.Name() == "prompt" || cmd.Name() == "schema" {
 			return
 		}
 		for _, problem := range problems {
@@ -117,7 +121,7 @@ func New(args []string) (*cobra.Command, error) {
 		return execute(cmd, r, true)
 	}
 	run := &cobra.Command{Use: "run <name>", Short: "Run a named recipe", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a command name is required") }}
-	root.AddCommand(run)
+	root.AddCommand(run, newPromptCommand(dir), newSchemaCommand(dir))
 	for _, r := range recipes {
 		root.AddCommand(recipeCommand(r, execute))
 		run.AddCommand(recipeCommand(r, execute))

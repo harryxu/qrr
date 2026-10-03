@@ -49,6 +49,58 @@ The `add` command creates an editable example template. `edit` uses `$EDITOR`
 (with quoted arguments supported), falling back to `vi`. Removal asks for
 confirmation unless `--yes` is supplied.
 
+## Create recipes with an AI agent
+
+Pass an existing command to `qrr prompt` to generate a short prompt, then copy the
+prompt and send it to your AI agent:
+
+```sh
+qrr prompt yt-dlp \
+  -f "bestvideo[height<=2160]+bestaudio/best[height<=2160]" \
+  --write-subs \
+  --write-auto-subs \
+  --sub-langs "zh-Hans,ja,en" \
+  --embed-subs \
+  --sleep-subtitles 60 \
+  'https://www.youtube.com/watch?v=cD-Z2A2zuiY'
+```
+
+The default output is only an entry prompt, for example:
+
+```text
+Run qrr prompt -v 'flutter upgrade' and follow its instructions to add a qrr YAML recipe.
+```
+
+The agent runs the suggested command to retrieve detailed instructions:
+
+```sh
+qrr prompt -v "flutter upgrade"
+qrr prompt --verbose "flutter upgrade"
+qrr prompt --help
+qrr schema
+```
+
+Use `-v` or `--verbose` before the target command to select detailed output. In
+verbose mode, pass a complete command as one quoted argument or use separate
+command arguments. After the target executable, all flags belong to that command,
+including `-v`, `--help`, and flags that overlap qrr flags. Simple command tokens
+are displayed naturally; values containing spaces or shell syntax remain quoted
+to preserve argument boundaries.
+
+Quote URLs and shell-sensitive values so your shell passes them unchanged.
+Default entry prompts omit configuration paths. For a custom configuration,
+retrieve detailed instructions with qrr's global flags before `prompt`:
+
+```sh
+qrr --config-dir ./recipes prompt -v "flutter upgrade"
+```
+
+Both modes generate text only; neither executes the target command nor creates a
+recipe. Prompts go to stdout. Only the default mode prints a copy reminder to
+stderr. `qrr schema` prints the configuration path, embedded YAML schema, and
+adding steps, so agents can learn the format when only the binary is installed.
+`prompt` and `schema` are reserved command names.
+
 ## Shell completion
 
 After installing qrr on PATH, load completion once for your shell:
