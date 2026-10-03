@@ -1,8 +1,6 @@
 # qrr — Quick Recipe Runner
 
-An interactive Go CLI for running shortcuts defined in YAML. qrr uses inline
-terminal prompts, with no full-screen interface. The executable needs no Node or
-Python runtime. Programs called by recipes must be installed separately.
+An interactive Go CLI for running shortcuts defined in YAML.
 
 ## Build and install
 
