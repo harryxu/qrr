@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -66,25 +67,7 @@ func addManagement(root *cobra.Command, store *recipe.Store, recipes []*recipe.R
 		return nil
 	}})
 	root.AddCommand(&cobra.Command{Use: "edit <name>", Short: "Edit a recipe using $EDITOR", Args: cobra.ExactArgs(1), ValidArgsFunction: complete, RunE: func(cmd *cobra.Command, args []string) error {
-		if !prompt.IsTerminal() {
-			return fmt.Errorf("editing requires an interactive terminal")
-		}
-		path, err := store.Path(args[0])
-		if err != nil {
-			return err
-		}
-		editor := os.Getenv("EDITOR")
-		if editor == "" {
-			editor = "vi"
-		}
-		argv, err := shlex.Split(editor)
-		if err != nil || len(argv) == 0 {
-			return fmt.Errorf("invalid EDITOR value")
-		}
-		if _, err := exec.LookPath(argv[0]); err != nil {
-			return err
-		}
-		return runner.Run(cmd.Context(), append(argv, path))
+		return editRecipe(cmd.Context(), store, args[0])
 	}})
 	root.AddCommand(&cobra.Command{Use: "rename <old-name> <new-name>", Short: "Rename a recipe and its file", Args: cobra.ExactArgs(2), ValidArgsFunction: complete, RunE: func(cmd *cobra.Command, args []string) error {
 		if err := store.Rename(args[0], args[1]); err != nil {
@@ -121,4 +104,26 @@ func addManagement(root *cobra.Command, store *recipe.Store, recipes []*recipe.R
 	}}
 	remove.Flags().BoolVar(&yes, "yes", false, "Confirm deletion without prompting")
 	root.AddCommand(remove)
+}
+
+func editRecipe(ctx context.Context, store *recipe.Store, name string) error {
+	if !prompt.IsTerminal() {
+		return fmt.Errorf("editing requires an interactive terminal")
+	}
+	path, err := store.Path(name)
+	if err != nil {
+		return err
+	}
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "vi"
+	}
+	argv, err := shlex.Split(editor)
+	if err != nil || len(argv) == 0 {
+		return fmt.Errorf("invalid EDITOR value")
+	}
+	if _, err := exec.LookPath(argv[0]); err != nil {
+		return err
+	}
+	return runner.Run(ctx, append(argv, path))
 }

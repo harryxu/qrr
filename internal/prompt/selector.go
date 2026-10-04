@@ -14,19 +14,20 @@ const selectorDescription = "Type to filter."
 // Huh owns navigation, rendering, and viewport scrolling.
 type commandSelector struct {
 	*huh.Select[string]
-	input       *huh.Input
-	options     []huh.Option[string]
-	value       *string
-	rename      func(string, string) error
-	oldName     string
-	newName     string
-	renameError error
-	renaming    bool
-	theme       huh.Theme
-	keymap      *huh.KeyMap
-	width       int
-	height      int
-	position    huh.FieldPosition
+	input         *huh.Input
+	options       []huh.Option[string]
+	value         *string
+	rename        func(string, string) error
+	oldName       string
+	newName       string
+	renameError   error
+	renaming      bool
+	theme         huh.Theme
+	keymap        *huh.KeyMap
+	width         int
+	height        int
+	position      huh.FieldPosition
+	editRequested bool
 }
 
 func newCommandSelector(options []huh.Option[string], value *string) *commandSelector {
@@ -82,6 +83,15 @@ func (s *commandSelector) Update(msg tea.Msg) (huh.Model, tea.Cmd) {
 		return s, cmd
 	}
 	if key, ok := msg.(tea.KeyPressMsg); ok {
+		if key.String() == "ctrl+e" {
+			name, found := s.Hovered()
+			if !found {
+				return s, nil
+			}
+			*s.value = name
+			s.editRequested = true
+			return s, huh.NextField
+		}
 		if key.String() == "ctrl+r" {
 			name, found := s.Hovered()
 			if !found || s.rename == nil {
@@ -176,5 +186,6 @@ func (s *commandSelector) KeyBinds() []key.Binding {
 	return []key.Binding{
 		key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
 		key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("ctrl+r", "rename")),
+		key.NewBinding(key.WithKeys("ctrl+e"), key.WithHelp("ctrl+e", "edit")),
 	}
 }

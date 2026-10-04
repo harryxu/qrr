@@ -16,37 +16,69 @@ import (
 func IsTerminal() bool {
 	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
-func Choose(ctx context.Context, recipes []*recipe.Recipe, rename func(string, string) error) (*recipe.Recipe, error) {
-	if len(recipes) == 0 {
-		return nil, fmt.Errorf("no commands configured; use qrr add <name> to create one")
-	}
+
+// CommandActions provides storage operations used by the interactive selector.
+type CommandActions struct {
+	Rename func(string, string) error
+	Edit   func(string) error
+	Reload func() ([]*recipe.Recipe, []error)
+}
+
+func Choose(ctx context.Context, recipes []*recipe.Recipe, actions CommandActions) (*recipe.Recipe, error) {
 	var name string
-	options := make([]huh.Option[string], 0, len(recipes))
-	for _, r := range recipes {
-		options = append(options, huh.NewOption(r.Name+"  "+r.Description, r.Name))
-	}
-	field := newCommandSelector(options, &name)
-	field.rename = func(oldName, newName string) error {
-		if err := rename(oldName, newName); err != nil {
-			return err
+	var notice string
+	for {
+		if len(recipes) == 0 {
+			return nil, fmt.Errorf("no commands configured; use qrr add <name> to create one%s", notice)
+		}
+		options := make([]huh.Option[string], 0, len(recipes))
+		for _, r := range recipes {
+			options = append(options, huh.NewOption(r.Name+"  "+r.Description, r.Name))
+		}
+		field := newCommandSelector(options, &name)
+		field.Description(selectorDescription + notice)
+		field.rename = func(oldName, newName string) error {
+			if err := actions.Rename(oldName, newName); err != nil {
+				return err
+			}
+			for _, r := range recipes {
+				if r.Name == oldName {
+					r.Name = newName
+					break
+				}
+			}
+			return nil
+		}
+		if err := runForm(ctx, field); err != nil {
+			return nil, err
+		}
+		if field.editRequested {
+			// Run the editor only after the form has restored the terminal.
+			err := actions.Edit(name)
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			if errors.Is(err, context.Canceled) {
+				return nil, err
+			}
+			var problems []error
+			recipes, problems = actions.Reload()
+			if err != nil {
+				problems = append([]error{fmt.Errorf("editor: %w", err)}, problems...)
+			}
+			notice = ""
+			if err := errors.Join(problems...); err != nil {
+				notice = "\n" + err.Error()
+			}
+			continue
 		}
 		for _, r := range recipes {
-			if r.Name == oldName {
-				r.Name = newName
-				break
+			if r.Name == name {
+				return r, nil
 			}
 		}
-		return nil
+		return nil, fmt.Errorf("no command selected")
 	}
-	if err := runForm(ctx, field); err != nil {
-		return nil, err
-	}
-	for _, r := range recipes {
-		if r.Name == name {
-			return r, nil
-		}
-	}
-	return nil, fmt.Errorf("no command selected")
 }
 func Ask(ctx context.Context, p recipe.Param, value any) (any, error) {
 	title := p.Prompt

@@ -34,6 +34,13 @@ filtered list. Invalid, reserved, unchanged, or occupied names show an error and
 allow correction. After saving, the search is cleared and the renamed recipe is
 highlighted; press Enter separately to run it. Ctrl+R does nothing when no recipes
 match the search. Ctrl+C cancels from either the list or the rename input.
+Press Ctrl+E to open the highlighted recipe's configuration file in `$EDITOR`
+(or `vi` when unset). The terminal is restored before the editor starts. After the
+editor exits, qrr reloads the recipes and returns to the list with the search
+cleared, retaining the highlighted name when it is still valid. Editor failures
+and invalid configurations are reported; invalid recipes are skipped, and an
+empty list exits with an error. Editing never runs the recipe. Ctrl+E does
+nothing when the search has no matches.
 With no terminal or with `--non-interactive`, a command name is required.
 
 Configuration is loaded from `$XDG_CONFIG_HOME/qrr/commands`, or

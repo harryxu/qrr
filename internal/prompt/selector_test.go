@@ -141,6 +141,28 @@ func TestSelectorRenameErrorsAllowCorrection(t *testing.T) {
 	}
 }
 
+func TestSelectorEditUsesHighlightedMatch(t *testing.T) {
+	var value string
+	s := newCommandSelector([]huh.Option[string]{huh.NewOption("hello", "hello"), huh.NewOption("download", "download")}, &value)
+	s.WithTheme(huh.ThemeFunc(huh.ThemeCharm))
+	s.WithKeyMap(huh.NewDefaultKeyMap())
+	s.Focus()
+	s.Update(tea.KeyPressMsg{Code: 'd', Text: "download"})
+	_, cmd := s.Update(tea.KeyPressMsg{Code: 'e', Mod: tea.ModCtrl})
+	if !s.editRequested || value != "download" || cmd == nil {
+		t.Fatal("Ctrl+E did not request editing the filtered match")
+	}
+	if cmd() != huh.NextField() {
+		t.Fatal("editing did not finish the form to restore the terminal")
+	}
+	s.editRequested = false
+	s.Update(tea.KeyPressMsg{Code: 'x', Text: "missing"})
+	_, cmd = s.Update(tea.KeyPressMsg{Code: 'e', Mod: tea.ModCtrl})
+	if s.editRequested || cmd != nil {
+		t.Fatal("empty search requested editing a stale selection")
+	}
+}
+
 func TestSelectorKeepsVisibleRowsUntilBoundary(t *testing.T) {
 	for _, count := range []int{3, 12} {
 		t.Run(fmt.Sprint(count), func(t *testing.T) {

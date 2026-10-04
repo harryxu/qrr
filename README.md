@@ -25,7 +25,7 @@ and share.
 
 After installation, use these commands with your saved recipes:
 
-- `qrr`: search for a recipe and run it interactively; press Ctrl+R to rename the highlighted recipe.
+- `qrr`: search for a recipe and run it interactively; press Ctrl+R to rename or Ctrl+E to edit the highlighted recipe.
 - `qrr hello`: run the `hello` recipe and answer its parameter prompts.
 - `qrr hello --name Harry --non-interactive`: run with supplied values and defaults without prompts.
 - `qrr hello --name Harry --non-interactive --dry-run`: preview the command without executing it.
