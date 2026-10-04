@@ -54,8 +54,8 @@ func TestPromptPreservesTargetArguments(t *testing.T) {
 			t.Fatalf("missing %q in detailed prompt", want)
 		}
 	}
-	if !strings.Contains(stderr, "Copy the following prompt") {
-		t.Fatal("missing copy reminder")
+	if stderr != "" {
+		t.Fatalf("redirected prompt printed a reminder: %q", stderr)
 	}
 	if len(strings.Split(strings.TrimSpace(out), "\n")) != 1 {
 		t.Fatal("prompt should be a single paragraph")

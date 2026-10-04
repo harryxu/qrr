@@ -113,7 +113,19 @@ uses highlighted text with no background, border, padding, or inserted line
 breaks. The terminal handles visual wrapping, keeping the prompt on one logical
 line for copying. The copy reminder uses the terminal's default text color.
 Redirected output stays plain text; `NO_COLOR` disables styling. Only the default
-mode prints a copy reminder to stderr. `qrr schema` prints the configuration path, embedded YAML schema, and
+mode prints a copy reminder to stderr when stdout is a terminal. Pipes and file
+redirection omit the reminder, including when `NO_COLOR` is set. For example:
+
+```sh
+qrr prompt flutter upgrade | cat
+qrr prompt -v flutter upgrade > recipe-prompt.txt
+```
+
+Use `-v` to send the complete authoring instructions directly to an agent that
+reads stdin. Without `-v`, the agent receives instructions to run
+`qrr prompt -v` first.
+
+`qrr schema` prints the configuration path, embedded YAML schema, and
 adding steps, so agents can learn the format when only the binary is installed.
 `prompt` and `schema` are reserved command names.
 

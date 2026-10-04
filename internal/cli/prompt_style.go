@@ -16,11 +16,18 @@ func writeEntryPrompt(out, stderr io.Writer, text string) error {
 	if _, ok := styledTerminal(out); ok {
 		text = renderEntryPrompt(text)
 	}
-	if _, err := fmt.Fprint(stderr, reminder+"\n\n"); err != nil {
-		return err
+	if isTerminalOutput(out) {
+		if _, err := fmt.Fprint(stderr, reminder+"\n\n"); err != nil {
+			return err
+		}
 	}
 	_, err := fmt.Fprintln(out, strings.TrimSuffix(text, "\n"))
 	return err
+}
+
+func isTerminalOutput(w io.Writer) bool {
+	file, ok := w.(interface{ Fd() uintptr })
+	return ok && term.IsTerminal(int(file.Fd()))
 }
 
 func styledTerminal(w io.Writer) (int, bool) {
