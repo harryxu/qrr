@@ -33,6 +33,7 @@ After installation, use these commands with your saved recipes:
 - `qrr show hello`: view the recipe definition.
 - `qrr add hello`: create a recipe template to edit.
 - `qrr edit hello`: open the recipe in your editor.
+- `qrr rename hello greet`: rename a recipe and its file.
 - `qrr remove hello`: delete the recipe after confirmation.
 - `qrr validate`: check recipe files for errors.
 - `qrr prompt "flutter upgrade"`: generate instructions to send to an AI agent that can create a recipe.

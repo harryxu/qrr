@@ -105,12 +105,8 @@ func (s *Store) Create(name string) (string, error) {
 	if err := os.MkdirAll(s.dir, 0700); err != nil {
 		return "", err
 	}
-	for _, ext := range []string{".yaml", ".yml"} {
-		if _, err := os.Lstat(filepath.Join(s.dir, name+ext)); err == nil {
-			return "", fmt.Errorf("command %q already exists", name)
-		} else if !os.IsNotExist(err) {
-			return "", err
-		}
+	if err := s.requireAvailable(name); err != nil {
+		return "", err
 	}
 	path := filepath.Join(s.dir, name+".yaml")
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
@@ -135,4 +131,15 @@ func (s *Store) Remove(name string) error {
 		return err
 	}
 	return os.Remove(path)
+}
+
+func (s *Store) requireAvailable(name string) error {
+	for _, ext := range []string{".yaml", ".yml"} {
+		if _, err := os.Lstat(filepath.Join(s.dir, name+ext)); err == nil {
+			return fmt.Errorf("command %q already exists", name)
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+	}
+	return nil
 }

@@ -43,12 +43,23 @@ qrr list
 qrr show hello
 qrr hello --name Harry
 qrr run hello --name Harry
-qrr remove hello --yes
+qrr rename hello greet
+qrr remove greet --yes
 ```
 
 The `add` command creates an editable example template. `edit` uses `$EDITOR`
 (with quoted arguments supported), falling back to `vi`. Removal asks for
 confirmation unless `--yes` is supplied.
+
+`qrr rename <old-name> <new-name>` updates the YAML `name` and filename without
+prompting or executing the recipe. It preserves the `.yaml` or `.yml` extension,
+comments, file permissions, and command behavior; YAML formatting may change.
+The new name must be valid and unreserved, and neither target extension may
+already exist. Renaming to the same name is an error. The source must be a valid
+recipe in a regular file, with no duplicate file under the other extension.
+Recipes whose other values depend on an anchored `name` must be edited to remove
+that dependency before renaming. The new command and its flags appear in completion
+on the next invocation.
 
 ## Create recipes with an AI agent
 

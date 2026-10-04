@@ -3,7 +3,7 @@
 Store one recipe per `<name>.yaml` or `<name>.yml` in the configuration directory's
 `commands` folder. Names must match filenames and use lowercase letters, digits,
 and hyphens, beginning with a letter. CLI command names are reserved: `run`, `list`, `show`, `add`, `edit`,
-`remove`, `validate`, `completion`, `help`, `prompt`, and `schema`.
+`rename`, `remove`, `validate`, `completion`, `help`, `prompt`, and `schema`.
 Unknown fields, duplicate YAML keys, duplicate parameter names, multiple YAML
 documents, and unsupported versions are errors.
 

@@ -86,6 +86,13 @@ func addManagement(root *cobra.Command, store *recipe.Store, recipes []*recipe.R
 		}
 		return runner.Run(cmd.Context(), append(argv, path))
 	}})
+	root.AddCommand(&cobra.Command{Use: "rename <old-name> <new-name>", Short: "Rename a recipe and its file", Args: cobra.ExactArgs(2), ValidArgsFunction: complete, RunE: func(cmd *cobra.Command, args []string) error {
+		if err := store.Rename(args[0], args[1]); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintf(cmd.OutOrStdout(), "Renamed: %s -> %s\n", args[0], args[1])
+		return err
+	}})
 	var yes bool
 	remove := &cobra.Command{Use: "remove <name>", Short: "Delete a recipe", Args: cobra.ExactArgs(1), ValidArgsFunction: complete, RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
