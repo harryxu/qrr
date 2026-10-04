@@ -109,3 +109,20 @@ For recipe changes, validate examples and inspect the resulting argv:
 - For prompt changes, also verify keyboard interaction in a real terminal.
 - Keep README, usage, and schema documentation consistent with implemented behavior.
 - Build artifacts belong in `bin` or `dist` and must remain ignored by Git.
+
+## Agent skills
+
+### Issue tracker
+
+Before reading or publishing issues and specs, read `docs/agents/issue-tracker.md`.
+This repo tracks work as local Markdown files under `.scratch/<feature>/`.
+
+### Triage labels
+
+Before assigning triage status, read `docs/agents/triage-labels.md`.
+This repo uses the five default triage role names.
+
+### Domain docs
+
+Before exploring domain concepts or design decisions, read `docs/agents/domain.md`.
+This repo uses a single-context layout: root `GLOSSARY.md` and `docs/adr/`.
