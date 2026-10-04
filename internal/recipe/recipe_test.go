@@ -79,12 +79,12 @@ func TestLoadSkipsInvalidAndReloads(t *testing.T) {
 	}
 	write("demo.yaml", minimal)
 	write("broken.yaml", "bad: true")
-	recipes, problems := Load(dir)
+	recipes, problems := NewStore(dir).Load()
 	if len(recipes) != 1 || len(problems) != 1 {
 		t.Fatalf("got %d recipes and %d errors", len(recipes), len(problems))
 	}
 	write("new.yaml", strings.ReplaceAll(minimal, "name: demo", "name: new"))
-	recipes, _ = Load(dir)
+	recipes, _ = NewStore(dir).Load()
 	if len(recipes) != 2 {
 		t.Fatal("new recipe not discovered")
 	}

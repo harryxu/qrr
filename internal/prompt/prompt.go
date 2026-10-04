@@ -3,6 +3,7 @@ package prompt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -25,7 +26,7 @@ func Choose(ctx context.Context, recipes []*recipe.Recipe) (*recipe.Recipe, erro
 		options = append(options, huh.NewOption(r.Name+"  "+r.Description, r.Name))
 	}
 	field := newCommandSelector(options, &name)
-	if err := huh.NewForm(huh.NewGroup(field)).WithAccessible(false).RunWithContext(ctx); err != nil {
+	if err := runForm(ctx, field); err != nil {
 		return nil, err
 	}
 	for _, r := range recipes {
@@ -45,7 +46,7 @@ func Ask(ctx context.Context, p recipe.Param, value any) (any, error) {
 	case "input":
 		v := value.(string)
 		field = huh.NewInput().Title(title).Value(&v).Validate(func(s string) error { return recipe.ValidateValue(p, s) })
-		err := huh.NewForm(huh.NewGroup(field)).WithAccessible(false).RunWithContext(ctx)
+		err := runForm(ctx, field)
 		return v, err
 	case "select":
 		v := value.(string)
@@ -58,7 +59,7 @@ func Ask(ctx context.Context, p recipe.Param, value any) (any, error) {
 			opts = append(opts, huh.NewOption(label, o.Value))
 		}
 		field = huh.NewSelect[string]().Title(title).Options(opts...).Value(&v).Validate(func(s string) error { return recipe.ValidateValue(p, s) })
-		err := huh.NewForm(huh.NewGroup(field)).WithAccessible(false).RunWithContext(ctx)
+		err := runForm(ctx, field)
 		return v, err
 	case "multiselect":
 		v := value.([]string)
@@ -71,13 +72,22 @@ func Ask(ctx context.Context, p recipe.Param, value any) (any, error) {
 			opts = append(opts, huh.NewOption(label, o.Value))
 		}
 		field = huh.NewMultiSelect[string]().Title(title).Options(opts...).Value(&v).Validate(func(s []string) error { return recipe.ValidateValue(p, s) })
-		err := huh.NewForm(huh.NewGroup(field)).WithAccessible(false).RunWithContext(ctx)
+		err := runForm(ctx, field)
 		return v, err
 	case "confirm":
 		v := value.(bool)
 		field = huh.NewConfirm().Title(title).Value(&v).Validate(func(b bool) error { return recipe.ValidateValue(p, b) })
-		err := huh.NewForm(huh.NewGroup(field)).WithAccessible(false).RunWithContext(ctx)
+		err := runForm(ctx, field)
 		return v, err
 	}
 	return nil, fmt.Errorf("unsupported parameter type")
+}
+
+// runForm keeps terminal-library cancellation errors inside the prompt module.
+func runForm(ctx context.Context, field huh.Field) error {
+	err := huh.NewForm(huh.NewGroup(field)).WithAccessible(false).RunWithContext(ctx)
+	if errors.Is(err, huh.ErrUserAborted) {
+		return context.Canceled
+	}
+	return err
 }

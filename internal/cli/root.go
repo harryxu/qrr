@@ -46,7 +46,8 @@ func New(args []string) (*cobra.Command, error) {
 	if err != nil {
 		return nil, err
 	}
-	recipes, problems := recipe.Load(dir)
+	store := recipe.NewStore(dir)
+	recipes, problems := store.Load()
 	var nonInteractive, dryRun, jsonOutput bool
 	root := &cobra.Command{Use: "qrr", Short: "Run your command recipes", SilenceUsage: true, SilenceErrors: true, TraverseChildren: true, Args: cobra.NoArgs}
 	root.PersistentFlags().StringVar(&dir, "config-dir", dir, "Configuration directory")
@@ -62,39 +63,30 @@ func New(args []string) (*cobra.Command, error) {
 		}
 	}
 	execute := func(cmd *cobra.Command, r *recipe.Recipe, selected bool) error {
-		values := map[string]any{}
-		interactive := !nonInteractive && prompt.IsTerminal()
+		explicit := map[string]any{}
 		for _, p := range r.Params {
-			value := recipe.DefaultValue(p)
-			provided := !selected && cmd.Flags().Changed(p.Name)
-			if provided {
-				switch p.Type {
-				case "confirm":
-					value, _ = cmd.Flags().GetBool(p.Name)
-				case "multiselect":
-					s, _ := cmd.Flags().GetString(p.Name)
-					if s == "" {
-						value = []string{}
-					} else {
-						value = strings.Split(s, ",")
-					}
-				default:
-					value, _ = cmd.Flags().GetString(p.Name)
+			if selected || !cmd.Flags().Changed(p.Name) {
+				continue
+			}
+			switch p.Type {
+			case "confirm":
+				explicit[p.Name], _ = cmd.Flags().GetBool(p.Name)
+			case "multiselect":
+				value, _ := cmd.Flags().GetString(p.Name)
+				if value == "" {
+					explicit[p.Name] = []string{}
+				} else {
+					explicit[p.Name] = strings.Split(value, ",")
 				}
+			default:
+				explicit[p.Name], _ = cmd.Flags().GetString(p.Name)
 			}
-			if !provided && interactive {
-				var err error
-				value, err = prompt.Ask(cmd.Context(), p, value)
-				if err != nil {
-					return err
-				}
-			}
-			if err := recipe.ValidateValue(p, value); err != nil {
-				return err
-			}
-			values[p.Name] = value
 		}
-		argv, err := r.Render(values)
+		var ask recipe.AskFunc
+		if !nonInteractive && prompt.IsTerminal() {
+			ask = prompt.Ask
+		}
+		argv, err := r.Prepare(cmd.Context(), explicit, ask)
 		if err != nil {
 			return err
 		}
@@ -129,7 +121,7 @@ func New(args []string) (*cobra.Command, error) {
 		root.AddCommand(recipeCommand(r, execute))
 		run.AddCommand(recipeCommand(r, execute))
 	}
-	addManagement(root, dir, recipes, problems, func() bool { return nonInteractive })
+	addManagement(root, store, recipes, problems, func() bool { return nonInteractive })
 	return root, nil
 }
 func recipeCommand(r *recipe.Recipe, execute func(*cobra.Command, *recipe.Recipe, bool) error) *cobra.Command {

@@ -112,9 +112,15 @@ func TestManagementAndInvalidFile(t *testing.T) {
 	if _, _, err := invoke(dir, "validate"); err == nil {
 		t.Fatal("validate ignored invalid file")
 	}
+	if out, _, err := invoke(dir, "show", "broken"); err != nil || out != "invalid: true" {
+		t.Fatalf("could not inspect invalid recipe: %q %v", out, err)
+	}
 	out, stderr, err := invoke(dir, "__complete", "d")
 	if err != nil || !strings.Contains(out, "demo") || strings.Contains(stderr, "Warning:") {
 		t.Fatalf("completion polluted: %q %q %v", out, stderr, err)
+	}
+	if _, _, err := invoke(dir, "remove", "broken", "--yes"); err != nil {
+		t.Fatalf("could not remove invalid recipe: %v", err)
 	}
 	if _, _, err := invoke(dir, "remove", "demo", "--yes"); err != nil {
 		t.Fatal(err)

@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"text/template"
 
@@ -40,7 +39,6 @@ type Recipe struct {
 	Command      []string       `yaml:"command"`
 	OptionalArgs []OptionalArgs `yaml:"optional_args"`
 	ArgsTail     []string       `yaml:"args_tail"`
-	Path         string         `yaml:"-"`
 }
 
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
@@ -70,45 +68,6 @@ func Parse(data []byte) (*Recipe, error) {
 		return nil, err
 	}
 	return &r, nil
-}
-func Load(dir string) ([]*Recipe, []error) {
-	entries, err := os.ReadDir(filepath.Join(dir, "commands"))
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, []error{err}
-	}
-	var recipes []*Recipe
-	var problems []error
-	seen := map[string]bool{}
-	for _, entry := range entries {
-		ext := filepath.Ext(entry.Name())
-		if entry.IsDir() || (ext != ".yaml" && ext != ".yml") {
-			continue
-		}
-		path := filepath.Join(dir, "commands", entry.Name())
-		data, err := os.ReadFile(path)
-		var r *Recipe
-		if err == nil {
-			r, err = Parse(data)
-		}
-		if err == nil && strings.TrimSuffix(entry.Name(), ext) != r.Name {
-			err = fmt.Errorf("name must match filename")
-		}
-		if err == nil && seen[r.Name] {
-			err = fmt.Errorf("duplicate command %q", r.Name)
-		}
-		if err != nil {
-			problems = append(problems, fmt.Errorf("%s: %w", path, err))
-			continue
-		}
-		seen[r.Name] = true
-		r.Path = path
-		recipes = append(recipes, r)
-	}
-	sort.Slice(recipes, func(i, j int) bool { return recipes[i].Name < recipes[j].Name })
-	return recipes, problems
 }
 func DefaultValue(p Param) any {
 	if p.Default != nil {
