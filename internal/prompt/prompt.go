@@ -16,7 +16,7 @@ import (
 func IsTerminal() bool {
 	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
-func Choose(ctx context.Context, recipes []*recipe.Recipe) (*recipe.Recipe, error) {
+func Choose(ctx context.Context, recipes []*recipe.Recipe, rename func(string, string) error) (*recipe.Recipe, error) {
 	if len(recipes) == 0 {
 		return nil, fmt.Errorf("no commands configured; use qrr add <name> to create one")
 	}
@@ -26,6 +26,18 @@ func Choose(ctx context.Context, recipes []*recipe.Recipe) (*recipe.Recipe, erro
 		options = append(options, huh.NewOption(r.Name+"  "+r.Description, r.Name))
 	}
 	field := newCommandSelector(options, &name)
+	field.rename = func(oldName, newName string) error {
+		if err := rename(oldName, newName); err != nil {
+			return err
+		}
+		for _, r := range recipes {
+			if r.Name == oldName {
+				r.Name = newName
+				break
+			}
+		}
+		return nil
+	}
 	if err := runForm(ctx, field); err != nil {
 		return nil, err
 	}

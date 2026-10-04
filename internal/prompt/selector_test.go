@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"qrr/internal/recipe"
+
 	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 )
@@ -49,6 +51,93 @@ func TestSelectorFilteringNavigationAndEmptyResults(t *testing.T) {
 	_, cmd = s.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	if cmd == nil {
 		t.Fatal("Enter did not submit selection")
+	}
+}
+
+func TestSelectorRenameAndReturn(t *testing.T) {
+	var value string
+	s := newCommandSelector([]huh.Option[string]{huh.NewOption("hello  Greeting", "hello"), huh.NewOption("download  Download", "download")}, &value)
+	// Exercise the default theme used by runForm, including after rebuilding the list.
+	s.WithKeyMap(huh.NewDefaultKeyMap())
+	s.WithWidth(80)
+	s.Focus()
+	calls := 0
+	s.rename = func(oldName, newName string) error {
+		calls++
+		if oldName != "download" || newName != "fetch" {
+			t.Fatalf("rename received %q -> %q", oldName, newName)
+		}
+		return nil
+	}
+	s.Update(tea.KeyPressMsg{Code: 'd', Text: "download"})
+	s.Update(tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl})
+	if !s.renaming || s.newName != "download" {
+		t.Fatal("rename did not prefill the highlighted command")
+	}
+	s.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	if s.renaming || calls != 0 {
+		t.Fatal("Escape saved a rename")
+	}
+	if hovered, ok := s.Hovered(); !ok || hovered != "download" || strings.Contains(s.View(), "hello  Greeting") {
+		t.Fatal("Escape did not preserve the filter and selection")
+	}
+	s.Update(tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl})
+	s.Update(tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})
+	s.Update(tea.KeyPressMsg{Code: 'f', Text: "fetch"})
+	_, cmd := s.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	if cmd != nil {
+		t.Fatal("rename save submitted the form")
+	}
+	if s.renaming || calls != 1 || value != "fetch" {
+		t.Fatalf("rename did not refresh selection: %q, calls=%d", value, calls)
+	}
+	// The save must focus the selector, rather than finish the form.
+	if !strings.Contains(s.View(), "hello") || !strings.Contains(s.View(), "fetch  Download") {
+		t.Fatal("rename did not clear the filter and return to the list")
+	}
+	s.Update(tea.KeyPressMsg{Code: 'x', Text: "missing"})
+	s.Update(tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl})
+	if s.renaming || calls != 1 {
+		t.Fatal("empty search renamed a stale selection")
+	}
+}
+
+func TestSelectorRenameErrorsAllowCorrection(t *testing.T) {
+	store := recipe.NewStore(t.TempDir())
+	if _, err := store.Create("hello"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Create("taken"); err != nil {
+		t.Fatal(err)
+	}
+	var value string
+	s := newCommandSelector([]huh.Option[string]{huh.NewOption("hello", "hello")}, &value)
+	s.WithTheme(huh.ThemeFunc(huh.ThemeCharm))
+	s.WithKeyMap(huh.NewDefaultKeyMap())
+	s.Focus()
+	s.rename = store.Rename
+	s.Update(tea.KeyPressMsg{Code: 'r', Mod: tea.ModCtrl})
+	for _, name := range []string{"hello", "", "../bad", "rename", "taken", "greet"} {
+		s.input.Value(&s.newName)
+		s.Update(tea.KeyPressMsg{Code: 'u', Mod: tea.ModCtrl})
+		if name != "" {
+			s.Update(tea.KeyPressMsg{Code: 'x', Text: name})
+		}
+		s.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+		if name != "greet" {
+			if !s.renaming || s.renameError == nil || !strings.Contains(s.View(), s.renameError.Error()) {
+				t.Fatalf("missing inline error for %q", name)
+			}
+			if _, err := store.Path("hello"); err != nil {
+				t.Fatal("failed rename removed source")
+			}
+		}
+	}
+	if s.renaming || value != "greet" {
+		t.Fatal("corrected name did not save")
+	}
+	if _, err := store.Path("greet"); err != nil {
+		t.Fatal(err)
 	}
 }
 

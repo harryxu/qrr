@@ -28,6 +28,12 @@ Type keywords to filter names and descriptions. Use the arrow keys to navigate
 and press Enter to select a recipe and fill in its parameters. The list scrolls
 to keep the selection visible, and long descriptions wrap to the terminal width.
 Ctrl+C cancels. After execution, qrr returns to the shell.
+Press Ctrl+R to rename the highlighted recipe in an inline input prefilled with
+its current name. Enter saves; Esc discards the edit and returns to the same
+filtered list. Invalid, reserved, unchanged, or occupied names show an error and
+allow correction. After saving, the search is cleared and the renamed recipe is
+highlighted; press Enter separately to run it. Ctrl+R does nothing when no recipes
+match the search. Ctrl+C cancels from either the list or the rename input.
 With no terminal or with `--non-interactive`, a command name is required.
 
 Configuration is loaded from `$XDG_CONFIG_HOME/qrr/commands`, or

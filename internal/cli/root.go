@@ -109,7 +109,7 @@ func New(args []string) (*cobra.Command, error) {
 		if nonInteractive || !prompt.IsTerminal() {
 			return fmt.Errorf("a command name is required outside interactive mode; use qrr list or qrr --help")
 		}
-		r, err := prompt.Choose(cmd.Context(), recipes)
+		r, err := prompt.Choose(cmd.Context(), recipes, store.Rename)
 		if err != nil {
 			return err
 		}
