@@ -16,8 +16,8 @@ func TestEntryPromptTerminalStyleKeepsOneLogicalLine(t *testing.T) {
 		"Run qrr prompt -v 'echo " + strings.Repeat("long-command-argument", 20) + "' and follow its instructions to add a qrr YAML recipe.",
 	} {
 		rendered := renderEntryPrompt(text + "\n")
-		if !strings.Contains(rendered, "\x1b[") {
-			t.Fatal("missing terminal colors")
+		if !strings.Contains(rendered, "\x1b[36m") {
+			t.Fatalf("prompt does not use the terminal's cyan palette color: %q", rendered)
 		}
 		if strings.ContainsAny(rendered, "\n\r") {
 			t.Fatal("styling inserted a hard line break")

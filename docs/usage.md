@@ -109,7 +109,7 @@ qrr --config-dir ./recipes prompt -v "flutter upgrade"
 
 Both modes generate text only; neither executes the target command nor creates a
 recipe. Prompts go to stdout. In a color-capable terminal, the default entry
-uses highlighted text with no background, border, padding, or inserted line
+uses the terminal theme's ANSI cyan color with no background, border, padding, or inserted line
 breaks. The terminal handles visual wrapping, keeping the prompt on one logical
 line for copying. The copy reminder uses the terminal's default text color.
 Redirected output stays plain text; `NO_COLOR` disables styling. Only the default
@@ -174,4 +174,3 @@ Handlers, workflows, shell pipelines, usage-frequency ranking, and favorites are
 not implemented. The yt-dlp example is declarative: subtitle network failures
 follow yt-dlp's exit behavior. A workflow that preserves successful video downloads
 when subtitle downloads fail is not implemented or verified against live YouTube.
-

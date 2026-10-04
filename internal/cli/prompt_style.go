@@ -42,6 +42,6 @@ func styledTerminal(w io.Writer) (int, bool) {
 func renderEntryPrompt(text string) string {
 	// Leave wrapping to the terminal so copied prompts retain one logical line.
 	return lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#38BDF8")).
+		Foreground(lipgloss.Cyan).
 		Render(strings.TrimSuffix(text, "\n"))
 }
