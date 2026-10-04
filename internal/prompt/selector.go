@@ -8,7 +8,7 @@ import (
 	"charm.land/huh/v2"
 )
 
-const selectorDescription = "Type to filter. Up/down navigate. Enter run. Ctrl+R rename. Ctrl+C cancel."
+const selectorDescription = "Type to filter."
 
 // commandSelector keeps search active and prevents submission of empty results.
 // Huh owns navigation, rendering, and viewport scrolling.
@@ -167,7 +167,14 @@ func (s *commandSelector) WithPosition(position huh.FieldPosition) huh.Field {
 
 func (s *commandSelector) KeyBinds() []key.Binding {
 	if s.renaming {
-		return s.input.KeyBinds()
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "save")),
+			key.NewBinding(key.WithKeys("esc"), key.WithHelp("esc", "back")),
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
+		}
 	}
-	return s.Select.KeyBinds()
+	return []key.Binding{
+		key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl+c", "quit")),
+		key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("ctrl+r", "rename")),
+	}
 }

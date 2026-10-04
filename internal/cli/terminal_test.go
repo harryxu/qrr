@@ -41,6 +41,10 @@ func TestTerminalPromptCancellation(t *testing.T) {
 			t.Cleanup(func() { _ = cmd.Process.Kill(); _ = terminal.Close() })
 			ready := make(chan struct{})
 			output := make(chan string, 1)
+			readyHint := "enter submit"
+			if mode == "selector" {
+				readyHint = "ctrl+r rename"
+			}
 			go func() {
 				var text strings.Builder
 				buffer := make([]byte, 4096)
@@ -48,7 +52,7 @@ func TestTerminalPromptCancellation(t *testing.T) {
 				for {
 					n, err := terminal.Read(buffer)
 					text.Write(buffer[:n])
-					if !notified && strings.Contains(text.String(), "enter submit") {
+					if !notified && strings.Contains(text.String(), readyHint) {
 						close(ready)
 						notified = true
 					}
@@ -83,6 +87,16 @@ func TestTerminalPromptCancellation(t *testing.T) {
 			case text := <-output:
 				if strings.Contains(text, "Running:") {
 					t.Fatalf("executed after cancellation: %q", text)
+				}
+				if mode == "selector" {
+					if !strings.Contains(text, "ctrl+c quit") || !strings.Contains(text, "ctrl+r rename") {
+						t.Fatalf("missing selector actions: %q", text)
+					}
+					for _, hint := range []string{"↑ up", "↓ down", "enter submit"} {
+						if strings.Contains(text, hint) {
+							t.Fatalf("unexpected selector hint %q: %q", hint, text)
+						}
+					}
 				}
 			case <-time.After(time.Second):
 				t.Fatal("terminal did not close after cancellation")
