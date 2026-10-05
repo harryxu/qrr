@@ -15,10 +15,21 @@ params:
       - |
         docker container ls --filter status=running --format json |
           jq -s 'map({label: (.Names + " · " + .Image), value: .ID})'
+
+  - name: shell
+    type: select
+    prompt: Select a shell to use
+    required: true
+    options:
+      - label: sh
+        value: sh
+      - label: bash
+        value: bash
+
 command:
   - docker
   - exec
   - -it
   - '--'
   - '{{ .container }}'
-  - sh
+  - '{{ .shell }}'
