@@ -14,6 +14,10 @@ When you know the recipe name, run it directly and supply values as flags. You
 can preview the resulting command before running it or use non-interactive mode
 in scripts.
 
+Selection parameters can load searchable choices from external commands with
+`options_command`. The [Docker shell example](examples/commands/docker-shell.yaml)
+lists running containers and opens a shell in the one you select.
+
 ## Turn an existing command into a recipe
 
 Pass a command to `qrr prompt` and send the generated instructions to your AI

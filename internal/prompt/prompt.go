@@ -94,28 +94,17 @@ func Ask(ctx context.Context, p recipe.Param, value any) (any, error) {
 		return v, err
 	case "select":
 		v := value.(string)
-		var opts []huh.Option[string]
-		for _, o := range p.Options {
-			label := o.Label
-			if label == "" {
-				label = o.Value
-			}
-			opts = append(opts, huh.NewOption(label, o.Value))
-		}
-		field = huh.NewSelect[string]().Title(title).Options(opts...).Value(&v).Validate(func(s string) error { return recipe.ValidateValue(p, s) })
+		opts := menuOptions(p.Options)
+		field = &optionSelect{Select: huh.NewSelect[string]().Title(title).Options(opts...).Value(&v).
+			Filtering(true).Description(title + "\nType to filter. Enter to select. Ctrl+C to cancel.").Height(10).
+			Validate(func(s string) error { return recipe.ValidateValue(p, s) })}
 		err := runForm(ctx, field)
 		return v, err
 	case "multiselect":
 		v := value.([]string)
-		var opts []huh.Option[string]
-		for _, o := range p.Options {
-			label := o.Label
-			if label == "" {
-				label = o.Value
-			}
-			opts = append(opts, huh.NewOption(label, o.Value))
-		}
-		field = huh.NewMultiSelect[string]().Title(title).Options(opts...).Value(&v).Validate(func(s []string) error { return recipe.ValidateValue(p, s) })
+		opts := menuOptions(p.Options)
+		field = &optionMultiSelect{MultiSelect: huh.NewMultiSelect[string]().Title(title).Options(opts...).Value(&v).
+			Filterable(true).Height(10).Validate(func(s []string) error { return recipe.ValidateValue(p, s) })}
 		err := runForm(ctx, field)
 		return v, err
 	case "confirm":

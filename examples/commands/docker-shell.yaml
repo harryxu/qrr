@@ -1,0 +1,24 @@
+version: 1
+name: docker-shell
+description: Open a shell in a running Docker container
+type: command
+params:
+  - name: container
+    type: select
+    prompt: Select a running container
+    required: true
+    options_command:
+      - bash
+      - -o
+      - pipefail
+      - -c
+      - |
+        docker container ls --filter status=running --format json |
+          jq -s 'map({label: (.Names + " · " + .Image), value: .ID})'
+command:
+  - docker
+  - exec
+  - -it
+  - '--'
+  - '{{ .container }}'
+  - sh

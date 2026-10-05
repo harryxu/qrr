@@ -170,6 +170,25 @@ flags are prompted. In non-interactive mode they use defaults, and missing requi
 values fail. Boolean flags accept `--flag=false`; multi-select flags accept comma
 separated values, with `--subtitles=` representing an explicit empty selection.
 
+Selection parameters can use `options_command` to retrieve their choices from an
+external command or an explicitly invoked shell script. The command returns a JSON
+array of `{ "label": "...", "value": "..." }` objects. Single-select menus support
+direct keyword search; multiselect menus use `/` to filter and Space to toggle.
+An empty result, failed query, invalid output, or stale default stops execution
+with an error. Queries time out after 30 seconds and support Ctrl+C cancellation.
+Explicit flags and non-interactive mode skip queries. Validation and completion
+also never run them. Interactive dry-runs may query options before showing argv.
+
+The [Docker shell example](../examples/commands/docker-shell.yaml) queries running
+containers, displays their names and images, and opens `sh` in the selected
+container. It requires Bash, Docker, jq, and `sh` inside the container:
+
+```sh
+./bin/qrr --config-dir ./examples docker-shell
+# Inspect argv without querying Docker or entering a container:
+./bin/qrr --config-dir ./examples docker-shell --container example-id --non-interactive --dry-run --json
+```
+
 `--dry-run` renders argv without executing; `--dry-run --json` emits a JSON array.
 Shell-quoted output is for inspection only. Execution passes argv directly to the
 program, with inherited stdin/stdout/stderr and its exit code. Before starting a
@@ -183,7 +202,8 @@ Terminal stderr is relayed through a pseudo-terminal to retain terminal-aware
 progress output and resizing. No shell expansion is performed.
 
 See the [recipe schema](schema.md) and [example recipes](../examples/commands).
-Handlers, workflows, shell pipelines, usage-frequency ranking, and favorites are
-not implemented. The yt-dlp example is declarative: subtitle network failures
+Handlers, workflows, implicit shell pipelines, usage-frequency ranking, and
+favorites are not implemented. Explicit shell scripts can be used in
+`options_command`. The yt-dlp example is declarative: subtitle network failures
 follow yt-dlp's exit behavior. A workflow that preserves successful video downloads
 when subtitle downloads fail is not implemented or verified against live YouTube.

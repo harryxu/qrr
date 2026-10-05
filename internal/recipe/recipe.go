@@ -15,16 +15,17 @@ import (
 )
 
 type Option struct {
-	Label string `yaml:"label"`
-	Value string `yaml:"value"`
+	Label string `yaml:"label" json:"label"`
+	Value string `yaml:"value" json:"value"`
 }
 type Param struct {
-	Name     string   `yaml:"name"`
-	Type     string   `yaml:"type"`
-	Prompt   string   `yaml:"prompt"`
-	Required bool     `yaml:"required"`
-	Default  any      `yaml:"default"`
-	Options  []Option `yaml:"options"`
+	Name           string   `yaml:"name"`
+	Type           string   `yaml:"type"`
+	Prompt         string   `yaml:"prompt"`
+	Required       bool     `yaml:"required"`
+	Default        any      `yaml:"default"`
+	Options        []Option `yaml:"options,omitempty"`
+	OptionsCommand []string `yaml:"options_command,omitempty"`
 }
 type OptionalArgs struct {
 	When string   `yaml:"when"`
@@ -115,7 +116,7 @@ func ValidateValue(p Param, v any) error {
 		if !ok {
 			return fmt.Errorf("%s: expected a string", p.Name)
 		}
-		if p.Type == "select" && s != "" && !allowed[s] {
+		if p.Type == "select" && s != "" && len(p.OptionsCommand) == 0 && !allowed[s] {
 			return fmt.Errorf("%s: unknown option %q", p.Name, s)
 		}
 	case "confirm":
@@ -129,7 +130,7 @@ func ValidateValue(p Param, v any) error {
 		}
 		seen := map[string]bool{}
 		for _, s := range values {
-			if !allowed[s] || seen[s] {
+			if s == "" || strings.Contains(s, ",") || (len(p.OptionsCommand) == 0 && !allowed[s]) || seen[s] {
 				return fmt.Errorf("%s: invalid or duplicate option %q", p.Name, s)
 			}
 			seen[s] = true
@@ -163,21 +164,22 @@ func (r *Recipe) Validate() error {
 		default:
 			return fmt.Errorf("%s: unknown parameter type %q", p.Name, p.Type)
 		}
-		if (p.Type == "select" || p.Type == "multiselect") && len(p.Options) == 0 {
-			return fmt.Errorf("%s: options are required", p.Name)
+		if (p.Type == "select" || p.Type == "multiselect") && len(p.Options) == 0 && p.OptionsCommand == nil {
+			return fmt.Errorf("%s: options or options_command are required", p.Name)
 		}
-		if p.Type != "select" && p.Type != "multiselect" && len(p.Options) > 0 {
+		if p.Type != "select" && p.Type != "multiselect" && (len(p.Options) > 0 || p.OptionsCommand != nil) {
 			return fmt.Errorf("%s: options are not supported for this type", p.Name)
 		}
-		seen := map[string]bool{}
-		for _, o := range p.Options {
-			if o.Value == "" || seen[o.Value] {
-				return fmt.Errorf("%s: empty or duplicate option", p.Name)
+		if p.OptionsCommand != nil {
+			if p.Options != nil {
+				return fmt.Errorf("%s: options and options_command are mutually exclusive", p.Name)
 			}
-			if p.Type == "multiselect" && strings.Contains(o.Value, ",") {
-				return fmt.Errorf("%s: multiselect option values must not contain commas", p.Name)
+			if len(p.OptionsCommand) == 0 || strings.TrimSpace(p.OptionsCommand[0]) == "" {
+				return fmt.Errorf("%s: options_command must contain an executable", p.Name)
 			}
-			seen[o.Value] = true
+		}
+		if err := validateOptions(p); err != nil {
+			return err
 		}
 		if p.Default != nil {
 			if p.Type == "multiselect" {
@@ -212,6 +214,20 @@ func (r *Recipe) Validate() error {
 	parts = append(parts, r.ArgsTail...)
 	_, err := render(parts, values)
 	return err
+}
+
+func validateOptions(p Param) error {
+	seen := map[string]bool{}
+	for _, o := range p.Options {
+		if o.Value == "" || seen[o.Value] {
+			return fmt.Errorf("%s: empty or duplicate option", p.Name)
+		}
+		if p.Type == "multiselect" && strings.Contains(o.Value, ",") {
+			return fmt.Errorf("%s: multiselect option values must not contain commas", p.Name)
+		}
+		seen[o.Value] = true
+	}
+	return nil
 }
 func render(parts []string, values map[string]any) ([]string, error) {
 	result := make([]string, 0, len(parts))
