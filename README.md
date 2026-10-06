@@ -43,5 +43,8 @@ After installation, use these commands with your saved recipes:
 - `qrr prompt "flutter upgrade"`: generate instructions to send to an AI agent that can create a recipe.
 - `qrr --help`: show available commands and options.
 
+Build a smaller standalone executable with `make release`; use `make build` for
+a build with debugging information.
+
 See the [usage guide](docs/usage.md) for installation and commands, or browse the
 [example recipes](examples/commands).

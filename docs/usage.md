@@ -7,12 +7,20 @@ Run the commands below from the project root when using `./bin/qrr`.
 Use the Go version specified in `go.mod` or newer:
 
 ```sh
-go build -o bin/qrr ./cmd/qrr
-# Or install into your Go binary directory:
-go install ./cmd/qrr
+make release
+# Equivalent command without Make:
+go build -trimpath -ldflags='-s -w' -o bin/qrr ./cmd/qrr
+# Or install a release build into your Go binary directory:
+go install -trimpath -ldflags='-s -w' ./cmd/qrr
 ```
 
 Add your Go binary directory to `PATH` when using `go install`.
+
+Release builds strip the symbol table and DWARF debugging information to reduce
+executable size, and remove absolute build paths with `-trimpath`. Normal Go
+panic stack traces remain available. For debugging with symbols and DWARF, use
+`make build` or `go build -o bin/qrr ./cmd/qrr`. Both Make targets write to
+`bin/qrr`.
 
 ## Quick start
 
