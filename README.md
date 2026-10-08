@@ -4,15 +4,13 @@ qrr turns complex commands into interactive recipes, with prompts for values
 and menus for options. Save commands you run often, then choose a recipe and
 fill in the values that change each time.
 
+
 ## Run saved commands
 
-Open qrr, search for a recipe, and fill in its parameters. For the included
-video-download recipe, you enter a URL, choose a maximum resolution, and select
-subtitle languages. qrr runs the command and returns you to the shell.
+Search for a recipe, answer its prompts, and run it—all from your terminal.
 
-When you know the recipe name, run it directly and supply values as flags. You
-can preview the resulting command before running it or use non-interactive mode
-in scripts.
+You can also run recipes by name with flags, preview commands with `--dry-run`,
+or use `--non-interactive` in scripts.
 
 Selection parameters can load searchable choices from external commands with
 `options_command`. The [Docker shell example](examples/commands/docker-shell.yaml)
