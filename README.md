@@ -24,6 +24,12 @@ agent. The agent can use qrr's recipe schema to turn that command into a saved
 shortcut with prompts and defaults. Recipes are YAML files that you can edit
 and share.
 
+## Recipe location
+
+Store recipes in `~/.config/qrr/commands/`, one file per recipe, such as
+`hello.yaml`. The recipe's `name` must match the filename. `qrr add hello`
+creates the file in this directory.
+
 ## Basic usage
 
 After installation, use these commands with your saved recipes:

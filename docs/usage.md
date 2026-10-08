@@ -65,11 +65,14 @@ The configuration directory contains a `commands/` subdirectory:
     └── myytdl.yaml
 ```
 
-By default, `<config-dir>` is `$XDG_CONFIG_HOME/qrr`, or `~/.config/qrr` when
-`XDG_CONFIG_HOME` is unset. `--config-dir ./examples` reads `./examples/commands`;
-pass the parent directory, not the `commands/` directory itself. Relative paths
-are resolved from your current working directory. `qrr schema` shows the resolved
-configuration and recipe directories.
+By default, recipes are stored in `~/.config/qrr/commands/`. If `XDG_CONFIG_HOME`
+is set, qrr uses `$XDG_CONFIG_HOME/qrr/commands/` instead.
+
+Use `--config-dir <dir>` to load recipes from `<dir>/commands/`. For example,
+`--config-dir ./examples` reads `./examples/commands`; pass the parent directory,
+not the `commands/` directory itself. Relative paths are resolved from your
+current working directory. Run `qrr schema` to see the resolved configuration
+and recipe directories.
 
 Files are reloaded on each invocation, including completion. Invalid recipes are
 skipped so valid ones remain usable. Normal commands report warnings;
