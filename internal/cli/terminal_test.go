@@ -12,8 +12,14 @@ import (
 
 	"qrr/internal/runner"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/creack/pty"
 )
+
+func terminalTestEnv() []string {
+	// Exercise styled output even when the parent environment disables colors.
+	return append(os.Environ(), "TERM=xterm-256color", "NO_COLOR=0", "CLICOLOR_FORCE=1")
+}
 
 func TestPromptCancellationChild(t *testing.T) {
 	mode := os.Getenv("QRR_PROMPT_CANCEL_CHILD")
@@ -78,7 +84,7 @@ func TestTerminalSelectorEditAndReload(t *testing.T) {
 			}
 			cmd := exec.Command(os.Args[0], "-test.run=^TestPromptCancellationChild$")
 			editor := Display([]string{os.Args[0], "-test.run=^TestRecipeEditorChild$", "--", "argument with spaces"})
-			cmd.Env = append(os.Environ(), "TERM=xterm-256color", "QRR_PROMPT_CANCEL_CHILD=selector", "QRR_PROMPT_CANCEL_CONFIG="+dir,
+			cmd.Env = append(terminalTestEnv(), "QRR_PROMPT_CANCEL_CHILD=selector", "QRR_PROMPT_CANCEL_CONFIG="+dir,
 				"EDITOR="+editor, "QRR_TEST_EDITOR=1", "QRR_TEST_EDITOR_PATH="+path, "QRR_TEST_EDITOR_CONTENT="+content)
 			if mode == "editor-failure" {
 				cmd.Env = append(cmd.Env, "QRR_TEST_EDITOR_FAIL=1")
@@ -97,16 +103,17 @@ func TestTerminalSelectorEditAndReload(t *testing.T) {
 				for {
 					n, err := terminal.Read(buffer)
 					text.Write(buffer[:n])
-					if !started && strings.Contains(text.String(), "ctrl+e edit") {
+					plainText := ansi.Strip(text.String())
+					if !started && strings.Contains(plainText, "ctrl+e edit") {
 						started = true
 						_, _ = terminal.Write([]byte{5})
 					}
-					if !reloaded && strings.Contains(text.String(), readyAfterEdit) {
+					if !reloaded && strings.Contains(plainText, readyAfterEdit) {
 						reloaded = true
 						close(edited)
 					}
 					if err != nil {
-						output <- text.String()
+						output <- plainText
 						return
 					}
 				}
@@ -163,7 +170,7 @@ func TestTerminalPromptCancellation(t *testing.T) {
 	for _, mode := range []string{"selector", "parameter"} {
 		t.Run(mode, func(t *testing.T) {
 			cmd := exec.Command(os.Args[0], "-test.run=^TestPromptCancellationChild$")
-			cmd.Env = append(os.Environ(), "QRR_PROMPT_CANCEL_CHILD="+mode, "QRR_PROMPT_CANCEL_CONFIG="+fixture(t), "TERM=xterm-256color")
+			cmd.Env = append(terminalTestEnv(), "QRR_PROMPT_CANCEL_CHILD="+mode, "QRR_PROMPT_CANCEL_CONFIG="+fixture(t))
 			terminal, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: 24, Cols: 80})
 			if err != nil {
 				t.Fatal(err)
@@ -182,12 +189,15 @@ func TestTerminalPromptCancellation(t *testing.T) {
 				for {
 					n, err := terminal.Read(buffer)
 					text.Write(buffer[:n])
-					if !notified && strings.Contains(text.String(), readyHint) {
+					// Strip the accumulated output so escape sequences split across reads
+					// cannot interrupt readiness hints or final assertions.
+					plainText := ansi.Strip(text.String())
+					if !notified && strings.Contains(plainText, readyHint) {
 						close(ready)
 						notified = true
 					}
 					if err != nil {
-						output <- text.String()
+						output <- plainText
 						return
 					}
 				}

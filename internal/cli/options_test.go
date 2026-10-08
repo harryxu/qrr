@@ -10,6 +10,7 @@ import (
 
 	"qrr/internal/recipe"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/creack/pty"
 	"go.yaml.in/yaml/v3"
 )
@@ -61,7 +62,7 @@ func TestTerminalDynamicOptionsSearch(t *testing.T) {
 			outputJSON := `[{"label":"Alpha","value":"alpha"},{"label":"Beta","value":"` + value + `"}]`
 			writeOptionsRecipe(t, dir, kind, []string{"bash", "-o", "pipefail", "-c", `printf '%s' "$1" | cat`, "qrr-provider", outputJSON})
 			cmd := exec.Command(os.Args[0], "-test.run=^TestPromptCancellationChild$")
-			cmd.Env = append(os.Environ(), "TERM=xterm-256color", "QRR_PROMPT_CANCEL_CHILD=parameter", "QRR_PROMPT_CANCEL_CONFIG="+dir)
+			cmd.Env = append(terminalTestEnv(), "QRR_PROMPT_CANCEL_CHILD=parameter", "QRR_PROMPT_CANCEL_CONFIG="+dir)
 			terminal, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: 24, Cols: 100})
 			if err != nil {
 				t.Fatal(err)
@@ -75,7 +76,8 @@ func TestTerminalDynamicOptionsSearch(t *testing.T) {
 				for {
 					n, err := terminal.Read(buffer)
 					text.Write(buffer[:n])
-					if stage == 0 && strings.Contains(text.String(), "Beta") {
+					plainText := ansi.Strip(text.String())
+					if stage == 0 && strings.Contains(plainText, "Beta") {
 						stage = 1
 						if kind == "select" {
 							_, _ = terminal.Write([]byte("missing\r"))
@@ -83,12 +85,12 @@ func TestTerminalDynamicOptionsSearch(t *testing.T) {
 							_, _ = terminal.Write([]byte("/Beta\r \r"))
 						}
 					}
-					if kind == "select" && stage == 1 && strings.Contains(text.String(), "No matching options") {
+					if kind == "select" && stage == 1 && strings.Contains(plainText, "No matching options") {
 						stage = 2
 						_, _ = terminal.Write([]byte(strings.Repeat("\x7f", len("missing")) + "Beta\r"))
 					}
 					if err != nil {
-						output <- text.String()
+						output <- plainText
 						return
 					}
 				}
