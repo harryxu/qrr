@@ -1,5 +1,12 @@
 # qrr (Quick Recipe Runner)
 
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="docs/usage.md#quick-start">Quick start</a> ·
+  <a href="docs/README.md">Docs</a> ·
+  <a href="examples/commands">Examples</a> ·
+</p>
+
 qrr turns complex commands into interactive recipes, with prompts for values
 and menus for options. Save commands you run often, then choose a recipe and
 fill in the values that change each time.
