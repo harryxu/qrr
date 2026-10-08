@@ -8,7 +8,7 @@ writing your own.
 
 | Task | Read |
 | --- | --- |
-| Build qrr and run the included greeting | [Usage: build and quick start](usage.md#build-and-install) |
+| Install qrr and run your first recipe | [Usage: install](usage.md#install) and [quick start](usage.md#quick-start) |
 | Find where recipes are stored | [Usage: configuration](usage.md#configuration) |
 | Search, rename, or edit from the selector | [Usage: interactive selector](usage.md#choose-a-recipe-interactively) |
 | Create, inspect, validate, or remove recipes | [Usage: manage recipes](usage.md#manage-recipes) |

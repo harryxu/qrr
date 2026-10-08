@@ -1,81 +1,34 @@
 # Usage
 
-qrr runs YAML command recipes on Linux and macOS. The executable needs no Node
-or Python runtime; programs used by a recipe must be installed separately.
+qrr runs commands saved as YAML recipes. Install any programs your recipes use
+separately.
 
-Start with [Quick start](#quick-start), then see [Configuration](#configuration),
-[Manage recipes](#manage-recipes), or [Parameters and execution](#parameters-and-execution).
-The [recipe schema](schema.md) defines the YAML format.
+## Install
 
-The examples below assume qrr is installed and available on `PATH`, with recipes
-stored in the default configuration directory.
-
-## Build and install
-
-Install the latest prebuilt release without a Go toolchain:
+macOS / Linux:
 
 ```sh
-# macOS and Linux (amd64 or arm64):
 curl -fsSL https://raw.githubusercontent.com/harryxu/qrr/master/install.sh | sh
 ```
 
-The installer checks SHA-256 before installing into `~/.local/bin`. Add
+The installer writes qrr to `~/.local/bin`. Add
 `export PATH="$HOME/.local/bin:$PATH"` to your shell profile if needed, then open
-a new terminal. To choose another directory:
+a new terminal.
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/harryxu/qrr/master/install.sh | QRR_INSTALL_DIR="$HOME/bin" sh
-```
-
-For the Windows amd64 release, run in PowerShell:
+Windows (PowerShell):
 
 ```powershell
-# Optional: set the destination before running the installer.
-# $env:QRR_INSTALL_DIR = "$HOME\bin"
 irm https://raw.githubusercontent.com/harryxu/qrr/master/install.ps1 | iex
 ```
 
-The PowerShell installer checks SHA-256, writes `qrr.exe` to
-`%LOCALAPPDATA%\Programs\qrr\bin`, and updates the user PATH without administrator
-permissions. Reopen other terminals to pick up the PATH change.
+The installer adds qrr to your user PATH. Reopen your terminal after installation.
+You can also download qrr from [GitHub Releases](https://github.com/harryxu/qrr/releases).
 
-Run `qrr --version` to check the installed version. Rerun either installer to
-update to the latest release. You can also download archives and `checksums.txt` from
-[GitHub Releases](https://github.com/harryxu/qrr/releases).
-
-To build from source, use the Go version specified in `go.mod` or newer:
-
-```sh
-make release
-# Equivalent command without Make:
-go build -trimpath -ldflags='-s -w' -o bin/qrr ./cmd/qrr
-# Or install a release build into your Go binary directory:
-go install -trimpath -ldflags='-s -w' ./cmd/qrr
-```
-
-Add your Go binary directory to `PATH` when using `go install`.
-
-Release builds strip the symbol table and DWARF debugging information to reduce
-executable size, and remove absolute build paths with `-trimpath`. Normal Go
-panic stack traces remain available. For debugging with symbols and DWARF, use
-`make build` or `go build -o bin/qrr ./cmd/qrr`. Both Make targets write to
-`bin/qrr`.
-
-GitHub release builds embed the release tag, so `qrr --version` prints a value
-such as `qrr version v1.2.3`. Development builds include the first seven characters
-of the Git commit recorded by Go, for example `qrr version dev (abc1234)`.
-Without Git build metadata (such as when using `-buildvcs=false`), they report
-`qrr version dev (unknown)`. Published versions do not display the commit hash.
-To embed a version when building locally, run `make release VERSION=v1.2.3`, or:
-
-```sh
-go build -trimpath -ldflags='-s -w -X qrr/internal/cli.version=v1.2.3' -o bin/qrr ./cmd/qrr
-```
+Run `qrr --version` to check the installed version.
 
 ## Quick start
 
-Create a greeting recipe in your default configuration directory, preview it,
-then run it with the system's `echo` program:
+Create a greeting recipe, preview its command, then run it:
 
 ```sh
 qrr add hello
@@ -85,10 +38,9 @@ qrr hello --message "Hello, Test!" --non-interactive --dry-run --json
 qrr hello --message "Hello, Test!" --non-interactive
 ```
 
-The dry-run prints argv without running `echo`. The last command executes it and
-prints `Hello, Test!`; qrr also prints the command to stderr before execution.
+The preview shows the command arguments. The last command prints `Hello, Test!`.
 
-In an interactive terminal, open the recipe selector or prompt for a message:
+To choose a recipe or answer its prompts interactively:
 
 ```sh
 qrr
@@ -105,25 +57,12 @@ into your recipe directory; they are not installed automatically.
 qrr upgrade
 ```
 
-This checks the latest stable GitHub release and compares semantic versions.
-If the installed version is the same or newer, it exits without downloading.
-A development build (`dev`) is replaced with the latest stable release.
+qrr checks GitHub for the latest stable release and updates itself if a newer
+version is available. A development version (`dev`) is replaced with the latest
+stable release. You need write access to the directory containing qrr.
 
-The command downloads the matching macOS/Linux amd64 or arm64 archive, or the
-Windows amd64 ZIP, and verifies its SHA-256 against that release's
-`checksums.txt`. It replaces the current executable at its existing location,
-following symlinks and preserving file permissions. You need write access to
-the executable's directory. Download, checksum, and extraction errors leave the
-executable unchanged. Ctrl+C cancels the check or download before replacement.
-
-On Windows, a running executable is renamed before the new file is installed.
-Replacement failures attempt to restore the old file. A locked backup may remain
-as `qrr.exe.old`; it can be removed after the upgrading process exits, or will be
-removed on the next upgrade.
-
-Upgrades do not prompt or execute recipes. `--dry-run` and `--json` are not
-supported by this command. Help, validation, and completion never check for
-updates. `upgrade` is a reserved recipe name.
+Press Ctrl+C to cancel the check or download. This command does not support
+`--dry-run` or `--json`.
 
 ## Configuration
 
@@ -139,20 +78,14 @@ By default, recipes are stored in `~/.config/qrr/commands/`:
 If `XDG_CONFIG_HOME` is set, qrr uses `$XDG_CONFIG_HOME/qrr/commands/` instead.
 Run `qrr schema` to see the resolved configuration and recipe directories.
 
-Files are reloaded on each invocation, including completion. Invalid recipes are
-skipped so valid ones remain usable. Normal commands report warnings;
-`qrr validate` reports configuration errors and fails if any are found. Completion
-omits invalid recipes without warnings.
+Save one YAML file per recipe, with its `name` matching the filename. See the
+[recipe schema](schema.md) for the format. Changes take effect the next time you
+run qrr. Use `qrr validate` to check for errors; invalid recipes are skipped.
 
 ## Choose a recipe interactively
 
-With no command, qrr opens a searchable recipe list in an interactive terminal.
-Type keywords to filter names and descriptions. Use the arrow keys to navigate
-and press Enter to select a recipe and fill in its parameters. The list scrolls
-to keep the selection visible, and long descriptions wrap to the terminal width.
-Ctrl+C cancels. After execution, qrr returns to the shell.
-No recipe can be selected when the filter has no matches. With no terminal or
-with `--non-interactive`, a command name is required.
+Run `qrr` in a terminal to search your recipes. After you select one, qrr asks
+for its parameters, runs the command, and returns to the shell.
 
 | Key | Action |
 | --- | --- |
@@ -163,37 +96,10 @@ with `--non-interactive`, a command name is required.
 | Ctrl+E | Edit the highlighted recipe in `$EDITOR` (or `vi`) |
 | Ctrl+C | Cancel and return to the shell |
 
-Ctrl+R opens an inline input prefilled with the current name. Enter saves; Esc
-returns to the same filtered list without changes. Invalid, reserved, unchanged,
-or occupied names show an error and allow correction. After saving, the search
-is cleared and the renamed recipe is highlighted; press Enter separately to run
-it. Ctrl+C cancels from the rename input too.
-
-Ctrl+E restores the terminal before opening the editor. After it exits, qrr
-reloads recipes, clears the search, and retains the highlighted name if it is
-still valid. Editor failures and invalid configurations are reported; invalid
-recipes are skipped, and an empty list exits with an error. Editing never runs
-the recipe. Ctrl+R and Ctrl+E do nothing when no recipes match.
+When renaming, Enter saves and Esc cancels. Renaming or editing a recipe does
+not run it; press Enter in the list when you are ready to execute it.
 
 ## Manage recipes
-
-Create your first personal recipe, inspect it, and preview its command:
-
-```sh
-qrr add hello
-qrr edit hello
-qrr validate
-qrr list
-qrr show hello
-qrr hello --message "Hello from qrr" --non-interactive --dry-run --json
-qrr run hello --message "Hello from qrr" --non-interactive
-qrr rename hello greet
-qrr remove greet --yes
-```
-
-The `add` command creates a template with a `message` parameter, without
-overwriting an existing recipe. This differs from the included `hello` example,
-which has a `name` parameter. Customize the new file before running it.
 
 | Command | Purpose |
 | --- | --- |
@@ -205,91 +111,52 @@ which has a `name` parameter. Customize the new file before running it.
 | `qrr remove <name> [--yes]` | Delete the file, including invalid YAML |
 | `qrr validate [name]` | Validate all recipes or one named recipe |
 
-`edit` uses `$EDITOR` (with quoted arguments supported), falling back to `vi`. Removal asks for
-confirmation unless `--yes` is supplied. In non-interactive mode or without a
-terminal, removal requires `--yes`.
+`add` creates a template without overwriting existing files. `edit` uses `$EDITOR`
+or falls back to `vi`. Removal asks for confirmation; use `--yes` in scripts.
 
 ### Rename constraints
 
-`qrr rename <old-name> <new-name>` updates the YAML `name` and filename without
-prompting or executing the recipe. It preserves the `.yaml` or `.yml` extension,
-comments, file permissions, and command behavior; YAML formatting may change.
-The new name must be valid and unreserved, and neither target extension may
-already exist. Renaming to the same name is an error. The source must be a valid
-recipe in a regular file, with no duplicate file under the other extension.
-Recipes whose other values depend on an anchored `name` must be edited to remove
-that dependency before renaming. The new command and its flags appear in completion
-on the next invocation.
+Renaming updates both the recipe's `name` and its filename. Choose a new, unused
+name that follows the [naming rules](schema.md#file-layout-and-names). The source
+recipe must pass validation.
 
 ## Create recipes with an AI agent
 
-Pass an existing command to `qrr prompt` to generate a short prompt, then copy the
-prompt and send it to your AI agent:
-
-```sh
-qrr prompt yt-dlp \
-  -f "bestvideo[height<=2160]+bestaudio/best[height<=2160]" \
-  --write-subs \
-  --write-auto-subs \
-  --sub-langs "zh-Hans,ja,en" \
-  --embed-subs \
-  --sleep-subtitles 60 \
-  'https://www.youtube.com/watch?v=cD-Z2A2zuiY'
-```
-
-For a simpler command, the default output looks like this:
+Pass a command to `qrr prompt`:
 
 ```sh
 qrr prompt flutter upgrade
 ```
 
+Copy the printed instruction to your AI agent:
+
 ```text
 Run qrr prompt -v 'flutter upgrade' and follow its instructions to add a qrr YAML recipe.
 ```
 
-The agent runs the suggested command to retrieve detailed instructions:
+To get the full recipe-writing instructions yourself:
 
 ```sh
 qrr prompt -v "flutter upgrade"
-qrr prompt --verbose "flutter upgrade"
-qrr prompt --help
-qrr schema
 ```
 
-Use `-v` or `--verbose` before the target command to select detailed output. In
-verbose mode, pass a complete command as one quoted argument or use separate
-command arguments. After the target executable, all flags belong to that command,
-including `-v`, `--help`, and flags that overlap qrr flags. Simple command tokens
-are displayed naturally; values containing spaces or shell syntax remain quoted
-to preserve argument boundaries.
+Place `-v` (or `--verbose`) before the target command. Flags after the target
+executable belong to that command. Quote URLs and shell-sensitive values.
 
-Quote URLs and shell-sensitive values so your shell passes them unchanged.
-Default entry prompts omit configuration paths.
+`qrr prompt` only generates instructions. Your agent creates the recipe; qrr
+does not execute the supplied command or save a recipe itself.
 
-Both modes generate text only; neither executes the target command nor creates a
-recipe. Prompts go to stdout. In a color-capable terminal, the default entry
-uses ANSI cyan and stays on one logical line for copying; the terminal handles
-visual wrapping. The copy reminder uses the terminal's default text color.
-Redirected output stays plain text; `NO_COLOR` disables styling. Only the default
-mode prints a copy reminder to stderr when stdout is a terminal. Pipes and file
-redirection omit the reminder, including when `NO_COLOR` is set. For example:
+To save the full instructions to a file:
 
 ```sh
-qrr prompt flutter upgrade | cat
 qrr prompt -v flutter upgrade > recipe-prompt.txt
 ```
 
-Use `-v` to send the complete authoring instructions directly to an agent that
-reads stdin. Without `-v`, the agent receives instructions to run
-`qrr prompt -v` first.
-
-`qrr schema` prints the configuration path, embedded YAML schema, and
-adding steps, so agents can learn the format when only the binary is installed.
-`prompt` and `schema` are reserved command names.
+Use `qrr schema` to view the recipe format and where to save recipes.
 
 ## Shell completion
 
-After installing qrr on PATH, load completion once for your shell:
+Add completion to your shell:
 
 ```sh
 # Zsh, after compinit (add to ~/.zshrc):
@@ -302,9 +169,8 @@ source <(qrr completion bash)
 qrr completion fish > ~/.config/fish/completions/qrr.fish
 ```
 
-Try `qrr <Tab>`, `qrr run <Tab>`, or `qrr myytdl --resolution <Tab>`.
+Try `qrr <Tab>` to complete recipe names, or `qrr hello --<Tab>` to complete flags.
 New YAML recipes and their flags appear without regenerating completion scripts.
-Completion reads configuration only and never executes a recipe or opens a prompt.
 
 ## Parameters and execution
 
@@ -312,30 +178,27 @@ Completion reads configuration only and never executes a recipe or opens a promp
 
 | Flag | Effect when running a recipe |
 | --- | --- |
-| `--config-dir <dir>` | Override the default configuration directory and read recipes from `<dir>/commands/`. Pass the parent directory, not `commands/` itself. Relative paths are resolved from your current working directory. Put this global flag before the command when using completion or `prompt`. |
+| `--config-dir <dir>` | Load recipes from `<dir>/commands/` instead of the default directory. Pass the parent of `commands/`; relative paths start at your current directory. Place this flag before the command when using completion or `prompt`. |
 | `--non-interactive` | Use supplied values and defaults without qrr prompts or option queries |
-| `--dry-run` | Render argv without executing the recipe command |
-| `--json` | Print dry-run argv as a JSON array; requires `--dry-run` |
+| `--dry-run` | Preview the command without running it |
+| `--json` | Show preview arguments as a JSON array; requires `--dry-run` |
 
-Explicit flags override defaults. In interactive mode, parameters not supplied as
-flags are prompted. In non-interactive mode they use defaults, and missing required
-values fail. Boolean flags accept `--flag=false`; multi-select flags accept comma
-separated values, with `--subtitles=` representing an explicit empty selection.
-When stdin or stdout is not a terminal, recipe parameters also use defaults
-without prompting. Parameters are processed in YAML declaration order.
-`--non-interactive` controls qrr's prompts and option queries; the invoked program
-still receives stdin and may have its own interactive behavior.
+Flags override recipe defaults. In a terminal, qrr prompts for values you have
+not supplied. Use `--non-interactive` in scripts: omitted values use defaults,
+and missing required values cause an error. Specify the recipe name in scripts.
+The program run by a recipe may still ask for input.
+
+Use `--flag=false` to turn off a boolean parameter. Separate multiple selections
+with commas, or use `--subtitles=` for an empty selection.
 
 ### Selection menus and dynamic options
 
-Selection parameters can use `options_command` to retrieve their choices from an
-external command or an explicitly invoked shell script. The command returns a JSON
-array of `{ "label": "...", "value": "..." }` objects. Single-select menus support
-direct keyword search; multiselect menus use `/` to filter and Space to toggle.
-An empty result, failed query, invalid output, or stale default stops execution
-with an error. Queries time out after 30 seconds and support Ctrl+C cancellation.
-Explicit flags and non-interactive mode skip queries. Validation and completion
-also never run them. Interactive dry-runs may query options before showing argv.
+Type to search a single-select menu. In a multiselect menu, press `/` to filter
+and Space to toggle an option.
+
+Recipes can load current choices, such as running Docker containers, using
+[dynamic options](schema.md#dynamic-options). Supplying the parameter flag or
+using `--non-interactive` skips the option query.
 
 Save the [Docker shell example](../examples/commands/docker-shell.yaml) as
 `docker-shell.yaml` in your recipe directory. It queries running
@@ -345,11 +208,11 @@ plus the selected shell inside the container:
 
 ```sh
 qrr docker-shell
-# Inspect argv without querying Docker or entering a container:
+# Preview without querying Docker or entering a container:
 qrr docker-shell --container example-id --shell sh --non-interactive --dry-run --json
 ```
 
-### Preview argv
+### Preview a command
 
 Save the [yt-dlp example](../examples/commands/myytdl.yaml) as `myytdl.yaml` in
 your recipe directory, then preview its command:
@@ -361,22 +224,13 @@ qrr myytdl --url 'https://example.com/video' --subtitles= --non-interactive --dr
 This uses the configured resolution default and clears the default subtitle
 selection, so subtitle arguments are omitted. It does not download anything.
 
-`--dry-run` renders argv without executing; `--dry-run --json` emits a JSON array.
-Shell-quoted output is for inspection only. Interactive dry-runs can still run
-`options_command`; supply explicit values or use `--non-interactive` to avoid
-those queries.
+Interactive previews can still load dynamic options. Use `--non-interactive` to
+preview without querying them.
 
-### Streams, cancellation, and exit codes
+### Cancel a command
 
-Execution passes argv directly to the program, with inherited stdin/stdout/stderr and its exit code. Before starting a
-recipe, qrr prints the complete rendered command to stderr with a `Running:`
-prefix, including all selected parameter values. Recipe and CLI
-errors return 1; cancellation returns 130. Ctrl+C is treated as user cancellation:
-qrr avoids sending a duplicate interrupt to a child already in the terminal's
-foreground group and suppresses subsequent stderr cleanup diagnostics. Normal
-stderr output and genuine failures remain visible; stdout stays unchanged.
-Terminal stderr is relayed through a pseudo-terminal to retain terminal-aware
-progress output and resizing. No shell expansion is performed.
+Press Ctrl+C to cancel a prompt or running command. In scripts, qrr returns the
+command's exit code; qrr errors return 1 and cancellation returns 130.
 
 ## Troubleshooting
 
@@ -389,17 +243,8 @@ progress output and resizing. No shell expansion is performed.
 | Executable not found | Install the program named by the recipe or provider and check `PATH` |
 | JSON output requested without dry-run | Use both `--dry-run --json` |
 
-Check the resolved configuration paths and validate your recipes:
-
-```sh
-qrr schema
-qrr validate
-```
-
 ## Current limits
 
-Handlers, workflows, implicit shell pipelines, usage-frequency ranking, and
-favorites are not implemented. Explicit shell scripts can be used in
-`options_command`. The yt-dlp example is declarative: subtitle network failures
-follow yt-dlp's exit behavior. A workflow that preserves successful video downloads
-when subtitle downloads fail is not implemented or verified against live YouTube.
+qrr supports command recipes. Workflows, handlers, favorites, and usage-based
+ranking are not available. The yt-dlp example follows yt-dlp's behavior and does
+not add recovery for subtitle download failures.
