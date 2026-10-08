@@ -7,8 +7,8 @@ Start with [Quick start](#quick-start), then see [Configuration](#configuration)
 [Manage recipes](#manage-recipes), or [Parameters and execution](#parameters-and-execution).
 The [recipe schema](schema.md) defines the YAML format.
 
-Run commands using `./bin/qrr` from the project root. Commands using `qrr` assume
-the executable is on `PATH`.
+The examples below assume qrr is installed and available on `PATH`, with recipes
+stored in the default configuration directory.
 
 ## Build and install
 
@@ -74,27 +74,30 @@ go build -trimpath -ldflags='-s -w -X qrr/internal/cli.version=v1.2.3' -o bin/qr
 
 ## Quick start
 
-Preview the included greeting, then run it with the system's `echo` program:
+Create a greeting recipe in your default configuration directory, preview it,
+then run it with the system's `echo` program:
 
 ```sh
-./bin/qrr --config-dir ./examples list
-./bin/qrr --config-dir ./examples hello --name Test --non-interactive --dry-run --json
+qrr add hello
+qrr list
+qrr hello --message "Hello, Test!" --non-interactive --dry-run --json
 # Expected stdout: ["echo","Hello, Test!"]
-./bin/qrr --config-dir ./examples hello --name Test --non-interactive
+qrr hello --message "Hello, Test!" --non-interactive
 ```
 
 The dry-run prints argv without running `echo`. The last command executes it and
 prints `Hello, Test!`; qrr also prints the command to stderr before execution.
 
-In an interactive terminal, open the recipe selector or prompt for a name:
+In an interactive terminal, open the recipe selector or prompt for a message:
 
 ```sh
-./bin/qrr --config-dir ./examples
-./bin/qrr --config-dir ./examples hello
+qrr
+qrr hello
 ```
 
-The examples are loaded only when you select `./examples` as the configuration
-directory. They are not installed into your personal configuration automatically.
+`qrr add hello` creates a template with a `message` parameter. Use `qrr edit hello`
+to customize it. The [example recipes](../examples/commands) are available to copy
+into your recipe directory; they are not installed automatically.
 
 ## Upgrade qrr
 
@@ -124,23 +127,17 @@ updates. `upgrade` is a reserved recipe name.
 
 ## Configuration
 
-The configuration directory contains a `commands/` subdirectory:
+By default, recipes are stored in `~/.config/qrr/commands/`:
 
 ```text
-<config-dir>/
+~/.config/qrr/
 └── commands/
     ├── hello.yaml
     └── myytdl.yaml
 ```
 
-By default, recipes are stored in `~/.config/qrr/commands/`. If `XDG_CONFIG_HOME`
-is set, qrr uses `$XDG_CONFIG_HOME/qrr/commands/` instead.
-
-Use `--config-dir <dir>` to load recipes from `<dir>/commands/`. For example,
-`--config-dir ./examples` reads `./examples/commands`; pass the parent directory,
-not the `commands/` directory itself. Relative paths are resolved from your
-current working directory. Run `qrr schema` to see the resolved configuration
-and recipe directories.
+If `XDG_CONFIG_HOME` is set, qrr uses `$XDG_CONFIG_HOME/qrr/commands/` instead.
+Run `qrr schema` to see the resolved configuration and recipe directories.
 
 Files are reloaded on each invocation, including completion. Invalid recipes are
 skipped so valid ones remain usable. Normal commands report warnings;
@@ -267,12 +264,7 @@ are displayed naturally; values containing spaces or shell syntax remain quoted
 to preserve argument boundaries.
 
 Quote URLs and shell-sensitive values so your shell passes them unchanged.
-Default entry prompts omit configuration paths. For a custom configuration,
-retrieve detailed instructions with qrr's global flags before `prompt`:
-
-```sh
-qrr --config-dir ./recipes prompt -v "flutter upgrade"
-```
+Default entry prompts omit configuration paths.
 
 Both modes generate text only; neither executes the target command nor creates a
 recipe. Prompts go to stdout. In a color-capable terminal, the default entry
@@ -312,9 +304,7 @@ qrr completion fish > ~/.config/fish/completions/qrr.fish
 
 Try `qrr <Tab>`, `qrr run <Tab>`, or `qrr myytdl --resolution <Tab>`.
 New YAML recipes and their flags appear without regenerating completion scripts.
-To use a custom configuration directory, put `--config-dir` before the command
-name being completed. Completion reads configuration only and never executes a
-recipe or opens a prompt.
+Completion reads configuration only and never executes a recipe or opens a prompt.
 
 ## Parameters and execution
 
@@ -322,7 +312,7 @@ recipe or opens a prompt.
 
 | Flag | Effect when running a recipe |
 | --- | --- |
-| `--config-dir <dir>` | Read recipes from `<dir>/commands` |
+| `--config-dir <dir>` | Override the default configuration directory and read recipes from `<dir>/commands/`. Pass the parent directory, not `commands/` itself. Relative paths are resolved from your current working directory. Put this global flag before the command when using completion or `prompt`. |
 | `--non-interactive` | Use supplied values and defaults without qrr prompts or option queries |
 | `--dry-run` | Render argv without executing the recipe command |
 | `--json` | Print dry-run argv as a JSON array; requires `--dry-run` |
@@ -347,21 +337,25 @@ with an error. Queries time out after 30 seconds and support Ctrl+C cancellation
 Explicit flags and non-interactive mode skip queries. Validation and completion
 also never run them. Interactive dry-runs may query options before showing argv.
 
-The [Docker shell example](../examples/commands/docker-shell.yaml) queries running
+Save the [Docker shell example](../examples/commands/docker-shell.yaml) as
+`docker-shell.yaml` in your recipe directory. It queries running
 containers, displays their names and images, and prompts for `sh` or `bash` to
 open in the selected container. It requires Bash, Docker, and jq on the host,
 plus the selected shell inside the container:
 
 ```sh
-./bin/qrr --config-dir ./examples docker-shell
+qrr docker-shell
 # Inspect argv without querying Docker or entering a container:
-./bin/qrr --config-dir ./examples docker-shell --container example-id --shell sh --non-interactive --dry-run --json
+qrr docker-shell --container example-id --shell sh --non-interactive --dry-run --json
 ```
 
 ### Preview argv
 
+Save the [yt-dlp example](../examples/commands/myytdl.yaml) as `myytdl.yaml` in
+your recipe directory, then preview its command:
+
 ```sh
-./bin/qrr --config-dir ./examples myytdl --url 'https://example.com/video' --subtitles= --non-interactive --dry-run --json
+qrr myytdl --url 'https://example.com/video' --subtitles= --non-interactive --dry-run --json
 ```
 
 This uses the configured resolution default and clears the default subtitle
@@ -388,18 +382,18 @@ progress output and resizing. No shell expansion is performed.
 
 | Symptom | Next step |
 | --- | --- |
-| No commands configured | Use `qrr add <name>` or choose a configuration directory containing recipes |
-| Recipe missing from list or completion | Use the same `--config-dir` with `validate` and `schema`; check the directory and that the YAML name matches the filename |
+| No commands configured | Use `qrr add <name>` or copy recipes into your recipe directory |
+| Recipe missing from list or completion | Run `qrr schema` to check the recipe directory, then `qrr validate`; check that the YAML name matches the filename |
 | A value is required | Supply the parameter flag in scripts, or set a suitable default in YAML |
 | Option query fails or a default is stale | Inspect the provider output and update the default; see [Dynamic options](schema.md#dynamic-options) |
 | Executable not found | Install the program named by the recipe or provider and check `PATH` |
 | JSON output requested without dry-run | Use both `--dry-run --json` |
 
-When using a custom directory, diagnose that directory explicitly:
+Check the resolved configuration paths and validate your recipes:
 
 ```sh
-qrr --config-dir ./recipes schema
-qrr --config-dir ./recipes validate
+qrr schema
+qrr validate
 ```
 
 ## Current limits
