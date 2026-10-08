@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strings"
 
 	"qrr/internal/prompt"
@@ -14,6 +15,23 @@ import (
 
 	"github.com/spf13/cobra"
 )
+
+// version is set from the release tag with the Go linker's -X option.
+var version = "dev"
+
+func versionString(buildInfo *debug.BuildInfo) string {
+	if version != "dev" {
+		return version
+	}
+	if buildInfo != nil {
+		for _, setting := range buildInfo.Settings {
+			if setting.Key == "vcs.revision" && setting.Value != "" {
+				return "dev (" + setting.Value[:min(7, len(setting.Value))] + ")"
+			}
+		}
+	}
+	return "dev (unknown)"
+}
 
 // ConfigDir resolves the configuration path before dynamic flags are registered.
 func ConfigDir(args []string) (string, error) {
@@ -49,7 +67,8 @@ func New(args []string) (*cobra.Command, error) {
 	store := recipe.NewStore(dir)
 	recipes, problems := store.Load()
 	var nonInteractive, dryRun, jsonOutput bool
-	root := &cobra.Command{Use: "qrr", Short: "Run your command recipes", SilenceUsage: true, SilenceErrors: true, TraverseChildren: true, Args: cobra.NoArgs}
+	buildInfo, _ := debug.ReadBuildInfo()
+	root := &cobra.Command{Use: "qrr", Short: "Run your command recipes", Version: versionString(buildInfo), SilenceUsage: true, SilenceErrors: true, TraverseChildren: true, Args: cobra.NoArgs}
 	root.PersistentFlags().StringVar(&dir, "config-dir", dir, "Configuration directory")
 	root.PersistentFlags().BoolVar(&nonInteractive, "non-interactive", false, "Use defaults without prompting")
 	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Render argv without executing")

@@ -61,6 +61,7 @@ After installation, use these commands with your saved recipes:
 - `qrr validate`: check recipe files for errors.
 - `qrr prompt "flutter upgrade"`: generate instructions to send to an AI agent that can create a recipe.
 - `qrr --help`: show available commands and options.
+- `qrr --version`: show the installed version.
 
 Build a smaller standalone executable with `make release`; use `make build` for
 a build with debugging information.

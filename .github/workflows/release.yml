@@ -26,6 +26,8 @@ jobs:
     name: Verify on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -58,7 +60,13 @@ jobs:
           if [[ "$RUNNER_OS" == Windows ]]; then
             binary=bin/qrr.exe
           fi
-          go build -o "$binary" ./cmd/qrr
+          go build -ldflags="-X qrr/internal/cli.version=$RELEASE_TAG" -o "$binary" ./cmd/qrr
+          expected="qrr version $RELEASE_TAG"
+          actual=$("$binary" --version)
+          if [[ "$actual" != "$expected" ]]; then
+            echo "::error::Expected '$expected', got '$actual'."
+            exit 1
+          fi
           "$binary" --config-dir ./examples validate
           "$binary" --config-dir ./examples hello --name Test --non-interactive --dry-run --json
 
@@ -105,7 +113,7 @@ jobs:
             if [[ "$os" == windows ]]; then
               binary=qrr.exe
             fi
-            GOOS="$os" GOARCH="$arch" go build -trimpath -ldflags='-s -w' -o "$directory/$binary" ./cmd/qrr
+            GOOS="$os" GOARCH="$arch" go build -trimpath -ldflags="-s -w -X qrr/internal/cli.version=$RELEASE_TAG" -o "$directory/$binary" ./cmd/qrr
             if [[ "$os" == windows ]]; then
               (cd "$directory" && zip -q "../$name.zip" "$binary")
             else

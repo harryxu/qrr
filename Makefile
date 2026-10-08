@@ -1,10 +1,12 @@
 .PHONY: build release test check
 
+VERSION ?= dev
+
 build:
-	go build -o bin/qrr ./cmd/qrr
+	go build -ldflags="-X qrr/internal/cli.version=$(VERSION)" -o bin/qrr ./cmd/qrr
 
 release:
-	go build -trimpath -ldflags='-s -w' -o bin/qrr ./cmd/qrr
+	go build -trimpath -ldflags="-s -w -X qrr/internal/cli.version=$(VERSION)" -o bin/qrr ./cmd/qrr
 
 test:
 	go test ./...

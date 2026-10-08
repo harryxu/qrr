@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -65,6 +66,58 @@ func TestDryRunExplicitEmptyAndFalse(t *testing.T) {
 		}
 	}
 }
+
+func TestVersionDoesNotPromptOrRunRecipes(t *testing.T) {
+	dir := fixture(t)
+	if err := os.WriteFile(filepath.Join(dir, "commands", "broken.yaml"), []byte("invalid: true"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"--version"}, {"--non-interactive", "--version"}} {
+		out, stderr, err := invoke(dir, args...)
+		buildInfo, _ := debug.ReadBuildInfo()
+		if err != nil || out != "qrr version "+versionString(buildInfo)+"\n" || stderr != "" {
+			t.Fatalf("%v: output=%q stderr=%q error=%v", args, out, stderr, err)
+		}
+	}
+}
+
+func TestVersionIncludesCommitOnlyForDevelopmentBuilds(t *testing.T) {
+	previous := version
+	t.Cleanup(func() { version = previous })
+	info := &debug.BuildInfo{Settings: []debug.BuildSetting{{Key: "vcs.revision", Value: "1234567890abcdef"}}}
+	for _, tc := range []struct {
+		version string
+		info    *debug.BuildInfo
+		want    string
+	}{
+		{"dev", info, "dev (1234567)"},
+		{"dev", nil, "dev (unknown)"},
+		{"dev", &debug.BuildInfo{}, "dev (unknown)"},
+		{"v1.2.3", info, "v1.2.3"},
+		{"v1.2.3", nil, "v1.2.3"},
+	} {
+		version = tc.version
+		if got := versionString(tc.info); got != tc.want {
+			t.Fatalf("version=%q: got %q, want %q", tc.version, got, tc.want)
+		}
+	}
+}
+
+func TestVersionDoesNotShadowRecipeParameters(t *testing.T) {
+	dir := fixture(t)
+	data := "version: 1\nname: tool\ntype: command\nparams: [{name: version, type: input, required: true}]\ncommand: [echo, '{{ .version }}']\n"
+	if err := os.WriteFile(filepath.Join(dir, "commands", "tool.yaml"), []byte(data), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"tool"}, {"run", "tool"}} {
+		args = append(args, "--version", "v1.2.3", "--non-interactive", "--dry-run", "--json")
+		out, stderr, err := invoke(dir, args...)
+		if err != nil || out != "[\"echo\",\"v1.2.3\"]\n" || stderr != "" {
+			t.Fatalf("%v: output=%q stderr=%q error=%v", args, out, stderr, err)
+		}
+	}
+}
+
 func TestInvalidArgumentsFailWithoutExecution(t *testing.T) {
 	dir := fixture(t)
 	for _, args := range [][]string{{"demo", "--non-interactive"}, {"demo", "--text", "ok", "--quality", "missing", "--non-interactive"}, {"demo", "--text", "ok", "--languages", "en,en", "--non-interactive"}, {"demo", "--text", "ok", "--typo"}, {"--non-interactive"}} {

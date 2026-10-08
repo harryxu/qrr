@@ -39,8 +39,8 @@ The PowerShell installer checks SHA-256, writes `qrr.exe` to
 `%LOCALAPPDATA%\Programs\qrr\bin`, and updates the user PATH without administrator
 permissions. Reopen other terminals to pick up the PATH change.
 
-Run `qrr --help` to check the installation. Rerun either installer to update to
-the latest release. You can also download archives and `checksums.txt` from
+Run `qrr --version` to check the installed version. Rerun either installer to
+update to the latest release. You can also download archives and `checksums.txt` from
 [GitHub Releases](https://github.com/harryxu/qrr/releases).
 
 To build from source, use the Go version specified in `go.mod` or newer:
@@ -60,6 +60,17 @@ executable size, and remove absolute build paths with `-trimpath`. Normal Go
 panic stack traces remain available. For debugging with symbols and DWARF, use
 `make build` or `go build -o bin/qrr ./cmd/qrr`. Both Make targets write to
 `bin/qrr`.
+
+GitHub release builds embed the release tag, so `qrr --version` prints a value
+such as `qrr version v1.2.3`. Development builds include the first seven characters
+of the Git commit recorded by Go, for example `qrr version dev (abc1234)`.
+Without Git build metadata (such as when using `-buildvcs=false`), they report
+`qrr version dev (unknown)`. Published versions do not display the commit hash.
+To embed a version when building locally, run `make release VERSION=v1.2.3`, or:
+
+```sh
+go build -trimpath -ldflags='-s -w -X qrr/internal/cli.version=v1.2.3' -o bin/qrr ./cmd/qrr
+```
 
 ## Quick start
 
