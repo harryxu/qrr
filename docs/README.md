@@ -1,7 +1,9 @@
 # Documentation
 
-qrr (Quick Recipe Runner) is a standalone Go CLI for command shortcuts defined
-in YAML. Start with the usage guide to run a recipe, then use the schema when
+qrr (Quick Recipe Runner) is a standalone Go CLI that turns complex commands
+into reusable YAML shortcuts with interactive prompts.
+
+Start with the usage guide to run a recipe, then use the schema when
 writing your own.
 
 | Task | Read |
