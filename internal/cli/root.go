@@ -12,6 +12,7 @@ import (
 	"qrr/internal/prompt"
 	"qrr/internal/recipe"
 	"qrr/internal/runner"
+	"qrr/internal/update"
 
 	"github.com/spf13/cobra"
 )
@@ -74,7 +75,7 @@ func New(args []string) (*cobra.Command, error) {
 	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Render argv without executing")
 	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Print dry-run argv as JSON")
 	root.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-		if cmd.Name() == "__complete" || cmd.Name() == "__completeNoDesc" || cmd.Name() == "validate" || cmd.Name() == "prompt" || cmd.Name() == "schema" {
+		if cmd.Name() == "__complete" || cmd.Name() == "__completeNoDesc" || cmd.Name() == "validate" || cmd.Name() == "prompt" || cmd.Name() == "schema" || cmd.Name() == "upgrade" {
 			return
 		}
 		for _, problem := range problems {
@@ -139,7 +140,7 @@ func New(args []string) (*cobra.Command, error) {
 		return execute(cmd, r, true)
 	}
 	run := &cobra.Command{Use: "run <name>", Short: "Run a named recipe", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, args []string) error { return fmt.Errorf("a command name is required") }}
-	root.AddCommand(run, newPromptCommand(dir), newSchemaCommand(dir))
+	root.AddCommand(run, newPromptCommand(dir), newSchemaCommand(dir), newUpgradeCommand(update.Upgrade))
 	for _, r := range recipes {
 		root.AddCommand(recipeCommand(r, execute))
 		run.AddCommand(recipeCommand(r, execute))

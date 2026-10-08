@@ -48,11 +48,13 @@ jobs:
         run: |
           go test ./...
           go vet ./...
-      - name: Test and vet Windows execution and option providers
+      - name: Test and vet Windows execution, option providers, and upgrades
         if: runner.os == 'Windows'
         run: |
           go test ./internal/runner -run '^Test(ExitCode|Cancellation|UserCancellationSuppressesCleanupDiagnostics|RealFailuresRemainVisible)$'
           go test ./internal/recipe -run '^(TestPrepareDynamicOptionsAndLiteralArguments|TestDynamicOptions.*)$' -skip '^TestDynamicOptionsBashPipelineAndCancellation$'
+          go test ./internal/update
+          go test ./internal/cli -run '^Test(Upgrade|Version)'
           go vet ./...
       - name: Build and check examples
         run: |

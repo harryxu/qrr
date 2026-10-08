@@ -23,6 +23,7 @@ versions into this table.
 | `github.com/google/shlex` | Parse `$EDITOR` into an executable and arguments |
 | `golang.org/x/sys` | Unix terminal and signal operations |
 | `golang.org/x/term` | Detect terminals and manage terminal state |
+| `golang.org/x/mod` | Compare release versions using semantic version rules |
 
 Huh manages selection and scrolling. qrr adds adapters for direct keyword
 filtering, empty-result protection, and selector rename/edit actions. These

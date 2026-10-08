@@ -96,6 +96,32 @@ In an interactive terminal, open the recipe selector or prompt for a name:
 The examples are loaded only when you select `./examples` as the configuration
 directory. They are not installed into your personal configuration automatically.
 
+## Upgrade qrr
+
+```sh
+qrr upgrade
+```
+
+This checks the latest stable GitHub release and compares semantic versions.
+If the installed version is the same or newer, it exits without downloading.
+A development build (`dev`) is replaced with the latest stable release.
+
+The command downloads the matching macOS/Linux amd64 or arm64 archive, or the
+Windows amd64 ZIP, and verifies its SHA-256 against that release's
+`checksums.txt`. It replaces the current executable at its existing location,
+following symlinks and preserving file permissions. You need write access to
+the executable's directory. Download, checksum, and extraction errors leave the
+executable unchanged. Ctrl+C cancels the check or download before replacement.
+
+On Windows, a running executable is renamed before the new file is installed.
+Replacement failures attempt to restore the old file. A locked backup may remain
+as `qrr.exe.old`; it can be removed after the upgrading process exits, or will be
+removed on the next upgrade.
+
+Upgrades do not prompt or execute recipes. `--dry-run` and `--json` are not
+supported by this command. Help, validation, and completion never check for
+updates. `upgrade` is a reserved recipe name.
+
 ## Configuration
 
 The configuration directory contains a `commands/` subdirectory:

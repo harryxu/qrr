@@ -20,6 +20,7 @@ func TestStrictValidation(t *testing.T) {
 		"wrong multiselect":  minimal + "params: [{name: languages, type: multiselect, default: [10], options: [{value: en}]}]\n",
 		"unknown condition":  minimal + "optional_args: [{when: missing, args: [test]}]\n",
 		"reserved name":      strings.ReplaceAll(minimal, "name: demo", "name: completion"),
+		"reserved upgrade":   strings.ReplaceAll(minimal, "name: demo", "name: upgrade"),
 		"reserved flag":      minimal + "params: [{name: dry-run, type: confirm}]\n",
 		"handler":            strings.ReplaceAll(minimal, "type: command", "type: handler"),
 	}
