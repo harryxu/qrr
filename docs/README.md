@@ -12,7 +12,7 @@ writing your own.
 | Find where recipes are stored | [Usage: configuration](usage.md#configuration) |
 | Search, rename, or edit from the selector | [Usage: interactive selector](usage.md#choose-a-recipe-interactively) |
 | Create, inspect, validate, or remove recipes | [Usage: manage recipes](usage.md#manage-recipes) |
-| Turn an existing command into a recipe with an agent | [Usage: AI authoring](usage.md#create-recipes-with-an-ai-agent) |
+| Create recipes by hand or with an AI agent | [Usage: create recipes](usage.md#create-recipes) |
 | Use flags, defaults, dynamic choices, or dry-runs | [Usage: parameters and execution](usage.md#parameters-and-execution) |
 | Write YAML and understand argv rendering | [Recipe schema](schema.md) |
 | Adapt working recipes | [Example recipes](../examples/commands) |

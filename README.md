@@ -3,6 +3,7 @@
 <p align="center">
   <a href="#install">Install</a> ·
   <a href="docs/usage.md#quick-start">Quick start</a> ·
+  <a href="docs/usage.md#create-recipes">Create recipes</a> ·
   <a href="docs/README.md">Docs</a> ·
   <a href="examples/commands">Examples</a> ·
 </p>
@@ -74,6 +75,6 @@ After installation, use these commands with your saved recipes:
 Build a smaller standalone executable with `make release`; use `make build` for
 a build with debugging information.
 
-See the [documentation index](docs/README.md) for user and maintainer guides, the
+See the [docs](docs/README.md) for user and maintainer guides, the
 [usage guide](docs/usage.md) for installation and commands, or the
 [example recipes](examples/commands).

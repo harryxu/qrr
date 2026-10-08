@@ -120,7 +120,9 @@ Renaming updates both the recipe's `name` and its filename. Choose a new, unused
 name that follows the [naming rules](schema.md#file-layout-and-names). The source
 recipe must pass validation.
 
-## Create recipes with an AI agent
+## Create recipes
+
+### With an AI agent
 
 Pass a command to `qrr prompt`:
 
@@ -152,7 +154,33 @@ To save the full instructions to a file:
 qrr prompt -v flutter upgrade > recipe-prompt.txt
 ```
 
-Use `qrr schema` to view the recipe format and where to save recipes.
+### Manually
+
+Create a YAML file in `~/.config/qrr/commands/`, creating the directory if needed.
+Use one file per recipe, with its `name` matching the filename. If you use
+`XDG_CONFIG_HOME`, run `qrr schema` to check your recipe directory.
+
+For example, save this as `~/.config/qrr/commands/greet.yaml`:
+
+```yaml
+version: 1
+name: greet
+type: command
+command:
+  - echo
+  - Hello from qrr
+```
+
+Check the file and run the recipe:
+
+```sh
+qrr validate greet
+qrr greet
+```
+
+This prints `Hello from qrr`. See the [recipe schema](schema.md) for the complete
+file format, including parameters, prompts, defaults, and optional arguments.
+You can also view the format with `qrr schema`.
 
 ## Shell completion
 
