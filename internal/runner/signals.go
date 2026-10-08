@@ -3,12 +3,8 @@ package runner
 import (
 	"context"
 	"errors"
-	"io"
 	"os"
 	"os/signal"
-	"syscall"
-
-	"golang.org/x/sys/unix"
 )
 
 // ErrInterrupted identifies a deliberate user interrupt rather than an execution failure.
@@ -30,13 +26,3 @@ func InterruptContext(parent context.Context) (context.Context, context.CancelFu
 }
 
 func userInterrupted(ctx context.Context) bool { return errors.Is(context.Cause(ctx), ErrInterrupted) }
-
-// The child inherits our process group, so a terminal interrupt already reaches it.
-func sharesForegroundTerminal(in io.Reader) bool {
-	file, ok := in.(interface{ Fd() uintptr })
-	if !ok {
-		return false
-	}
-	group, err := unix.IoctlGetInt(int(file.Fd()), unix.TIOCGPGRP)
-	return err == nil && group == syscall.Getpgrp()
-}

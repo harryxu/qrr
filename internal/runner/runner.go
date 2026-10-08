@@ -30,7 +30,7 @@ func run(ctx context.Context, args []string, in io.Reader, out, stderr io.Writer
 			// again can interrupt Python finalizers and produce a traceback.
 			return nil
 		}
-		return cmd.Process.Signal(os.Interrupt)
+		return interruptProcess(cmd.Process)
 	}
 	cmd.WaitDelay = 3 * time.Second
 	runErr := cmd.Run()

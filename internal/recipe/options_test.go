@@ -34,6 +34,8 @@ func TestOptionsCommandChild(t *testing.T) {
 		os.Exit(7)
 	case "large":
 		fmt.Print(strings.Repeat("x", optionsOutputLimit+1))
+	case "wait":
+		time.Sleep(30 * time.Second)
 	}
 	os.Exit(0)
 }
@@ -169,6 +171,19 @@ func TestDynamicOptionsMultiselectAndDefaults(t *testing.T) {
 	p.OptionsCommand = optionsHelper("output", `[{"value":"one,two"}]`)
 	if _, err := resolveOptions(context.Background(), p); err == nil {
 		t.Fatal("accepted comma in multiselect value")
+	}
+}
+
+func TestDynamicOptionsCancellation(t *testing.T) {
+	p := Param{Name: "target", Type: "select", OptionsCommand: optionsHelper("wait")}
+	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	if _, err := resolveOptions(ctx, p); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("got %v", err)
+	}
+	if time.Since(start) > 2*time.Second {
+		t.Fatal("cancellation waited for the provider")
 	}
 }
 

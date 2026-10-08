@@ -4,13 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -26,25 +23,14 @@ func resolveOptions(ctx context.Context, p Param) (Param, error) {
 	ctx, cancel := context.WithTimeout(ctx, optionsTimeout)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, p.OptionsCommand[0], p.OptionsCommand[1:]...)
-	// Isolate the provider so cancellation also stops pipeline descendants.
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	cmd.Cancel = func() error {
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-		if errors.Is(err, syscall.ESRCH) {
-			return os.ErrProcessDone
-		}
-		return err
-	}
+	cleanup := configureOptionsProcess(cmd)
 	cmd.WaitDelay = time.Second
 	stdout := &limitedOutput{limit: optionsOutputLimit}
 	stderr := &limitedOutput{limit: 16 * 1024}
 	cmd.Stdout, cmd.Stderr = stdout, stderr
 	// Stdin is left nil, so providers receive EOF instead of consuming terminal input.
 	err := cmd.Run()
-	if cmd.Process != nil {
-		// Clean up descendants that outlive the provider or keep its pipes open.
-		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-	}
+	cleanup()
 	if ctx.Err() != nil {
 		return p, fmt.Errorf("%s: options_command: %w", p.Name, ctx.Err())
 	}

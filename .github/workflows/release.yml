@@ -1,0 +1,117 @@
+name: Release binaries
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and upload
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify:
+    name: Verify on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name || inputs.tag }}
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - name: Test and vet Linux and macOS
+        if: runner.os != 'Windows'
+        run: |
+          go test ./...
+          go vet ./...
+      - name: Test and vet Windows execution and option providers
+        if: runner.os == 'Windows'
+        run: |
+          go test ./internal/runner -run '^Test(ExitCode|Cancellation|UserCancellationSuppressesCleanupDiagnostics|RealFailuresRemainVisible)$'
+          go test ./internal/recipe -run '^(TestPrepareDynamicOptionsAndLiteralArguments|TestDynamicOptions.*)$' -skip '^TestDynamicOptionsBashPipelineAndCancellation$'
+          go vet ./...
+      - name: Build and check examples
+        run: |
+          binary=bin/qrr
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            binary=bin/qrr.exe
+          fi
+          go build -o "$binary" ./cmd/qrr
+          "$binary" --config-dir ./examples validate
+          "$binary" --config-dir ./examples hello --name Test --non-interactive --dry-run --json
+
+  release:
+    name: Build and upload release assets
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      CGO_ENABLED: '0'
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name || inputs.tag }}
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          check-latest: true
+      - name: Check release accepts uploads
+        run: |
+          immutable=$(gh release view --repo "$GITHUB_REPOSITORY" --json isImmutable --jq '.isImmutable' -- "$RELEASE_TAG")
+          if [[ "$immutable" == true ]]; then
+            echo '::error::This release is immutable. Upload assets to a draft release before publishing it.'
+            exit 1
+          fi
+      - name: Build archives
+        run: |
+          version="${RELEASE_TAG//[^a-zA-Z0-9._-]/_}"
+          mkdir -p dist
+          for target in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64 windows/amd64; do
+            os="${target%/*}"
+            arch="${target#*/}"
+            name="qrr_${version}_${os}_${arch}"
+            directory="dist/$name"
+            mkdir -p "$directory"
+            binary=qrr
+            if [[ "$os" == windows ]]; then
+              binary=qrr.exe
+            fi
+            GOOS="$os" GOARCH="$arch" go build -trimpath -ldflags='-s -w' -o "$directory/$binary" ./cmd/qrr
+            if [[ "$os" == windows ]]; then
+              (cd "$directory" && zip -q "../$name.zip" "$binary")
+            else
+              tar -czf "dist/$name.tar.gz" -C "$directory" "$binary"
+            fi
+          done
+          (cd dist && sha256sum ./*.tar.gz ./*.zip > checksums.txt)
+      - name: Upload archives and checksums
+        run: gh release upload --repo "$GITHUB_REPOSITORY" --clobber -- "$RELEASE_TAG" dist/*.tar.gz dist/*.zip dist/checksums.txt
