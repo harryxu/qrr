@@ -46,5 +46,6 @@ After installation, use these commands with your saved recipes:
 Build a smaller standalone executable with `make release`; use `make build` for
 a build with debugging information.
 
-See the [usage guide](docs/usage.md) for installation and commands, or browse the
+See the [documentation index](docs/README.md) for user and maintainer guides, the
+[usage guide](docs/usage.md) for installation and commands, or the
 [example recipes](examples/commands).
