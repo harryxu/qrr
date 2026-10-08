@@ -4,7 +4,8 @@ qrr turns complex commands into interactive recipes, with prompts for values
 and menus for options. Save commands you run often, then choose a recipe and
 fill in the values that change each time.
 
-[demo1.webm](https://github.com/user-attachments/assets/d2d08d2a-4ed9-48bb-81f6-e150f1108aea)
+[demo1.webm](https://github.com/user-attachments/assets/3b6144e9-233f-4822-a9d3-8ed8a8b2c662)
+
 
 ## Run saved commands
 
