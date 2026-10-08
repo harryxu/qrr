@@ -6,6 +6,19 @@ fill in the values that change each time.
 
 [demo1.webm](https://github.com/user-attachments/assets/3b6144e9-233f-4822-a9d3-8ed8a8b2c662)
 
+## Install
+
+macOS / Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/harryxu/qrr/master/install.sh | sh
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/harryxu/qrr/master/install.ps1 | iex
+```
 
 ## Run saved commands
 

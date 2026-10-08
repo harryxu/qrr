@@ -12,7 +12,38 @@ the executable is on `PATH`.
 
 ## Build and install
 
-Use the Go version specified in `go.mod` or newer:
+Install the latest prebuilt release without a Go toolchain:
+
+```sh
+# macOS and Linux (amd64 or arm64):
+curl -fsSL https://raw.githubusercontent.com/harryxu/qrr/master/install.sh | sh
+```
+
+The installer checks SHA-256 before installing into `~/.local/bin`. Add
+`export PATH="$HOME/.local/bin:$PATH"` to your shell profile if needed, then open
+a new terminal. To choose another directory:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/harryxu/qrr/master/install.sh | QRR_INSTALL_DIR="$HOME/bin" sh
+```
+
+For the Windows amd64 release, run in PowerShell:
+
+```powershell
+# Optional: set the destination before running the installer.
+# $env:QRR_INSTALL_DIR = "$HOME\bin"
+irm https://raw.githubusercontent.com/harryxu/qrr/master/install.ps1 | iex
+```
+
+The PowerShell installer checks SHA-256, writes `qrr.exe` to
+`%LOCALAPPDATA%\Programs\qrr\bin`, and updates the user PATH without administrator
+permissions. Reopen other terminals to pick up the PATH change.
+
+Run `qrr --help` to check the installation. Rerun either installer to update to
+the latest release. You can also download archives and `checksums.txt` from
+[GitHub Releases](https://github.com/harryxu/qrr/releases).
+
+To build from source, use the Go version specified in `go.mod` or newer:
 
 ```sh
 make release

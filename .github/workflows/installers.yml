@@ -1,0 +1,38 @@
+name: Verify installers
+
+on:
+  push:
+    paths: ['install.sh', 'install.ps1', 'tests/install.*', '.github/workflows/installers.yml']
+  pull_request:
+    paths: ['install.sh', 'install.ps1', 'tests/install.*', '.github/workflows/installers.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  unix:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify shell installer offline
+        run: sh tests/install.sh
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify Windows PowerShell 5.1 installer offline
+        shell: powershell
+        run: ./tests/install.ps1
+      - name: Verify PowerShell 7 installer offline
+        shell: pwsh
+        run: ./tests/install.ps1
