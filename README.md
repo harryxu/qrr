@@ -8,9 +8,8 @@
   <a href="examples/commands">Examples</a> ·
 </p>
 
-qrr turns complex commands into interactive recipes, with prompts for values
-and menus for options. Save commands you run often, then choose a recipe and
-fill in the values that change each time.
+qrr turns complex commands into reusable shortcuts, with prompts for values and menus for options.
+Search for a saved command and follow the prompts to run it, without having to remember every option or check the docs each time.
 
 [demo1.webm](https://github.com/user-attachments/assets/3b6144e9-233f-4822-a9d3-8ed8a8b2c662)
 
