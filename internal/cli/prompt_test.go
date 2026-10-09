@@ -73,8 +73,11 @@ func TestPromptDoesNotExecuteOrCreateRecipes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := invoke(dir, "prompt", exe); err != nil {
-		t.Fatal(err)
+	for _, flags := range [][]string{nil, {"-v"}, {"--chat"}, {"--chat", "-v"}} {
+		args := append([]string{"prompt"}, flags...)
+		if _, _, err := invoke(dir, append(args, exe)...); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if _, err := os.Stat(marker); !os.IsNotExist(err) {
 		t.Fatal("prompt executed the target command")
@@ -100,13 +103,106 @@ func TestPromptHelpAndMissingCommand(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(out, "prompt [-v] <command>") {
+		if !strings.Contains(out, "prompt [-v] [--chat] <command>") || !strings.Contains(out, "AI chat") {
 			t.Fatalf("missing prompt help: %q", out)
 		}
 	}
 	out, _, err := invoke(dir, "prompt", "--", "echo", "--help")
 	if err != nil || !strings.Contains(out, "echo --help") {
 		t.Fatalf("separator changed arguments: %q %v", out, err)
+	}
+}
+
+func TestChatPromptUsesRepositoryDocsAndReturnsYAML(t *testing.T) {
+	dir := fixture(t)
+	for _, flags := range [][]string{{"--chat"}, {"--chat", "-v"}, {"--verbose", "--chat"}, {"--chat", "--"}} {
+		args := append([]string{"prompt"}, flags...)
+		out, stderr, err := invoke(dir, append(args, "flutter upgrade")...)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, want := range []string{
+			"\n\nflutter upgrade\n\n",
+			"First browse the qrr GitHub repository at https://github.com/harryxu/qrr",
+			"https://github.com/harryxu/qrr/blob/master/README.md",
+			"https://github.com/harryxu/qrr/blob/master/docs/schema.md",
+			"https://github.com/harryxu/qrr/blob/master/docs/usage.md",
+			"https://github.com/harryxu/qrr/tree/master/examples/commands",
+			"ask me to paste the relevant documents",
+			"complete recipe in a YAML code block with its suggested filename",
+			"version: 1 and type: command",
+			"argv boundaries",
+			"Do not interpolate user input into shell source or include credentials",
+			"qrr --config-dir " + Display([]string{dir}) + " schema",
+			"validate <name>",
+			"--non-interactive --dry-run --json",
+			"all required parameter flags",
+			"Do not claim to have written files or run local validation",
+		} {
+			if !strings.Contains(out, want) {
+				t.Fatalf("missing %q in chat prompt: %q", want, out)
+			}
+		}
+		if strings.Contains(out, "Run qrr prompt -v") || strings.Contains(out, "First run qrr --help") {
+			t.Fatalf("chat prompt requires a local AI agent: %q", out)
+		}
+		if stderr != "" || strings.Contains(out, "\x1b[") {
+			t.Fatalf("chat prompt output polluted: %q %q", out, stderr)
+		}
+	}
+}
+
+func TestChatPromptPreservesTargetArguments(t *testing.T) {
+	dir := fixture(t)
+	target := []string{"echo", "--chat", "-v", "--verbose", "--help", "--config-dir", "target config", "", "a b 'world' $(echo test)", "https://example.com/?a=1&b=2"}
+	out, _, err := invoke(dir, append([]string{"prompt", "--chat"}, target...)...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, rest, ok := strings.Cut(out, "parameters:\n\n")
+	if !ok {
+		t.Fatalf("missing target command: %q", out)
+	}
+	command, _, ok := strings.Cut(rest, "\n\nFirst browse")
+	if !ok {
+		t.Fatalf("missing documentation instructions: %q", out)
+	}
+	got, err := shlex.Split(command)
+	if err != nil || !reflect.DeepEqual(got, target) {
+		t.Fatalf("target arguments changed: %#v %v", got, err)
+	}
+	if !strings.Contains(out, Display([]string{dir})+" schema") {
+		t.Fatalf("target config flag changed qrr configuration: %q", out)
+	}
+	out, _, err = invoke(dir, "prompt", "echo", "--chat")
+	if err != nil || out != "Run qrr prompt -v 'echo --chat' and follow its instructions to add a qrr YAML recipe.\n" {
+		t.Fatalf("target --chat consumed: %q %v", out, err)
+	}
+}
+
+func TestChatPromptHelpAndMissingCommand(t *testing.T) {
+	dir := fixture(t)
+	for _, args := range [][]string{
+		{"prompt", "--chat"}, {"prompt", "--chat", ""},
+		{"prompt", "--chat", "--"}, {"prompt", "--chat", "--unknown"},
+		{"prompt", "--chat", "-v"}, {"prompt", "-v", "--chat", "--"},
+	} {
+		if _, _, err := invoke(dir, args...); err == nil {
+			t.Fatalf("accepted missing chat command: %v", args)
+		}
+	}
+	for _, args := range [][]string{{"prompt", "--chat", "--help"}, {"prompt", "--chat", "-h"}, {"prompt", "-v", "--chat", "--help"}} {
+		out, _, err := invoke(dir, args...)
+		if err != nil || !strings.Contains(out, "prompt [-v] [--chat] <command>") {
+			t.Fatalf("missing chat prompt help: %q %v", out, err)
+		}
+	}
+}
+
+func TestPromptChatFlagCompletion(t *testing.T) {
+	out, _, err := invoke(fixture(t), "__complete", "prompt", "--ch")
+	if err != nil || !strings.Contains(out, "--chat\t") {
+		t.Fatalf("missing chat flag completion: %q %v", out, err)
 	}
 }
 

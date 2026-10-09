@@ -46,6 +46,10 @@ agent. The agent can use qrr's recipe schema to turn that command into a saved
 shortcut with prompts and defaults. Recipes are YAML files that you can edit
 and share.
 
+For an AI chat, use `qrr prompt --chat "flutter upgrade"`. The generated
+instructions ask the AI to read qrr's GitHub documentation and return a complete
+YAML recipe for you to save locally.
+
 ## Recipe location
 
 Store recipes in `~/.config/qrr/commands/`, one file per recipe, such as
@@ -68,6 +72,7 @@ After installation, use these commands with your saved recipes:
 - `qrr remove hello`: delete the recipe after confirmation.
 - `qrr validate`: check recipe files for errors.
 - `qrr prompt "flutter upgrade"`: generate instructions to send to an AI agent that can create a recipe.
+- `qrr prompt --chat "flutter upgrade"`: generate instructions for an AI chat to read GitHub docs and return recipe YAML.
 - `qrr --help`: show available commands and options.
 - `qrr --version`: show the installed version.
 - `qrr upgrade`: update to the latest release.

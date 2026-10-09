@@ -154,6 +154,21 @@ To save the full instructions to a file:
 qrr prompt -v flutter upgrade > recipe-prompt.txt
 ```
 
+### With an AI chat
+
+Paste the output into your AI chat:
+
+```sh
+qrr prompt --chat "flutter upgrade"
+# Separate target arguments also work:
+qrr prompt --chat yt-dlp --write-subs 'https://example.com/video'
+```
+
+The AI reads the docs and examples in the [qrr GitHub repository](https://github.com/harryxu/qrr)
+and returns a complete YAML recipe with a filename, parameter and dependency
+notes, and local save, validation, and dry-run steps. Save the YAML in your
+recipe directory and run the suggested checks.
+
 ### Manually
 
 Create a YAML file in `~/.config/qrr/commands/`, creating the directory if needed.
