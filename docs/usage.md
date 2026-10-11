@@ -255,6 +255,17 @@ qrr docker-shell
 qrr docker-shell --container example-id --shell sh --non-interactive --dry-run --json
 ```
 
+Save the [Remote example](../examples/commands/remote.yaml) as `remote.yaml` in
+your recipe directory to select a host from `~/.ssh/config`, shown as
+`alias - user@hostname`, and connect over SSH.
+
+```sh
+qrr remote
+# Preview without reading SSH config or connecting:
+qrr remote --host example-host --non-interactive --dry-run --json
+# Expected stdout: ["ssh","--","example-host"]
+```
+
 ### Preview a command
 
 Save the [yt-dlp example](../examples/commands/myytdl.yaml) as `myytdl.yaml` in

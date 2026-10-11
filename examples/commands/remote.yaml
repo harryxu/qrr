@@ -1,0 +1,49 @@
+# Requires Bash, awk, jq, and OpenSSH.
+# Lists literal Host aliases from ~/.ssh/config and resolves labels with ssh -G.
+version: 1
+name: remote
+description: Connect to a host from your SSH config
+type: command
+params:
+  - name: host
+    type: select
+    prompt: Select an SSH host
+    required: true
+    options_command:
+      - bash
+      - -e
+      - -o
+      - pipefail
+      - -c
+      - |
+        awk '
+          tolower($0) ~ /^[ \t]*host([ \t=]|$)/ {
+            sub(/^[ \t]*[^ \t=]+[ \t]*=?[ \t]*/, "")
+            while (length($0)) {
+              sub(/^[ \t\r]+/, "")
+              if ($0 == "" || substr($0, 1, 1) == "#") break
+              if (!match($0, /^"[^"]*"|^[^ \t\r]+/)) break
+              host = substr($0, 1, RLENGTH)
+              $0 = substr($0, RLENGTH + 1)
+              sub(/^"/, "", host)
+              sub(/"$/, "", host)
+              if (host != "" && host !~ /[*?]/ && host !~ /^!/ && !seen[host]++) {
+                print host
+              }
+            }
+          }
+        ' "$HOME/.ssh/config" |
+          while IFS= read -r host; do
+            ssh -G -- "$host" |
+              jq -R -n --arg host "$host" '
+                [inputs | capture("^(?<key>user|hostname) (?<value>.*)$")]
+                | from_entries
+                | {value: $host, label: ($host + " - " + .user + "@" + .hostname)}
+              '
+          done |
+          jq -s '.'
+
+command:
+  - ssh
+  - '--'
+  - '{{ .host }}'
