@@ -36,7 +36,12 @@ or use `--non-interactive` in scripts.
 
 Selection parameters can load searchable choices from external commands with
 `options_command`. The [Docker shell example](examples/commands/docker-shell.yaml)
-lists running containers and opens a shell in the one you select.
+lists running containers and opens a shell in the one you select. ⬇
+
+
+https://github.com/user-attachments/assets/d60bea8b-96d3-4b41-bc5b-4c9f661cede7
+
+
 
 ## Turn an existing command into a recipe
 
